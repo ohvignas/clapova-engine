@@ -49,6 +49,7 @@
     "producer:test:unit:bun": "bun run --cwd packages/producer test:unit:bun",
     "producer:test:unit:vitest": "bun run --cwd packages/producer test:unit:vitest",
     "producer:test:integration": "bun run --cwd packages/producer test:integration",
+    "test:golden-suite": "node --test tests/clapova-golden/golden.test.mjs",
     "test:regression": "bun run --cwd packages/producer test:regression",
     "player:perf": "bun run --filter @hyperframes/player perf",
     "format:check": "oxfmt --check .",
