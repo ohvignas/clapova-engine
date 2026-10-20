@@ -69,3 +69,42 @@ describe("FlyMachinesClient + launcher", () => {
     expect(res.error).toContain("422");
   });
 });
+
+describe("launcher edge cases", () => {
+  it("treats a failed machine state as a failure, not a timeout", async () => {
+    const { fetchImpl } = fakeFetch((method) => {
+      if (method === "POST") return { status: 200, json: { id: "m3" } };
+      if (method === "GET") return { status: 200, json: { state: "failed" } };
+      return { status: 200 };
+    });
+    const client = new FlyMachinesClient({ app: "a", token: "t", fetchImpl, sleep: async () => undefined });
+    const res = await createFlyLauncher({ client, spec: { image: "i" }, timeoutMs: 1000 }).run({ planHash: "h", chunkIndices: [0], format: "mp4" });
+    expect(res.ok).toBe(false);
+  });
+
+  it("does not create a machine when already aborted", async () => {
+    const { fetchImpl, calls } = fakeFetch(() => ({ status: 200, json: { id: "x" } }));
+    const client = new FlyMachinesClient({ app: "a", token: "t", fetchImpl });
+    const ac = new AbortController();
+    ac.abort();
+    const res = await createFlyLauncher({ client, spec: { image: "i" }, timeoutMs: 1000 }).run({ planHash: "h", chunkIndices: [0], format: "mp4" }, ac.signal);
+    expect(res).toEqual({ ok: false, error: "aborted" });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("destroys the machine when aborted mid-run", async () => {
+    const ac = new AbortController();
+    const { fetchImpl, calls } = fakeFetch((method) => {
+      if (method === "POST") return { status: 200, json: { id: "m4" } };
+      if (method === "GET") { ac.abort(); return { status: 200, json: { state: "stopped", events: [{ type: "exit", request: { exit_event: { exit_code: 0 } } }] } }; }
+      return { status: 200 };
+    });
+    const client = new FlyMachinesClient({ app: "a", token: "t", fetchImpl, sleep: async () => undefined });
+    await createFlyLauncher({ client, spec: { image: "i" }, timeoutMs: 1000 }).run({ planHash: "h", chunkIndices: [0], format: "mp4" }, ac.signal);
+    expect(calls.some((c) => c.method === "DELETE")).toBe(true);
+  });
+
+  it("rejects malformed base64 job", () => {
+    expect(() => decodeJob("!!!")).toThrow();
+  });
+});

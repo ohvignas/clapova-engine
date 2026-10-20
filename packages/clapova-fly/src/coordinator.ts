@@ -116,7 +116,9 @@ export async function renderOnFly(
       ...input.config,
       maxParallelChunks: Math.min(
         pre ?? Number.MAX_SAFE_INTEGER,
-        budget.machines * Math.max(1, input.chunksPerMachine ?? 1),
+        // Static cap (not the live budget): the plan hash must not change with the
+        // number of Machines currently running, or a retry could not resume.
+        deps.guards.maxMachines * Math.max(1, input.chunksPerMachine ?? 1),
       ),
     };
     const planned = await deps.primitives.plan(input.projectDir, config, planDir);
@@ -173,6 +175,7 @@ export async function renderOnFly(
       done = await readMarkers();
     }
 
+    if (input.signal?.aborted) throw new Error("[clapova-fly] aborted");
     if (done.size < chunkCount) {
       const missing = [...Array(chunkCount).keys()].filter((i) => !done.has(i));
       throw new FlyRenderError(

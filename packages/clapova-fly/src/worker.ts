@@ -21,6 +21,23 @@ export interface WorkerDeps {
   tmpRoot?: string;
 }
 
+async function readValidMarker(
+  store: ObjectStore,
+  planHash: string,
+  index: number,
+  ext: string,
+): Promise<ChunkDoneMarker | null> {
+  const raw = await store.getText(keys.chunkDone(planHash, index));
+  if (!raw) return null;
+  try {
+    const marker = JSON.parse(raw) as ChunkDoneMarker;
+    const head = await store.head(keys.chunk(planHash, index, ext));
+    return head && head.size === marker.size ? marker : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function runChunkJob(job: ChunkJob, deps: WorkerDeps): Promise<ChunkDoneMarker[]> {
   const work = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), "clapova-fly-chunk-"));
   const unpack =
@@ -36,9 +53,11 @@ export async function runChunkJob(job: ChunkJob, deps: WorkerDeps): Promise<Chun
     const markers: ChunkDoneMarker[] = [];
     for (const index of job.chunkIndices) {
       // Skip chunks a previous attempt already finished.
-      const prior = await deps.store.getText(keys.chunkDone(job.planHash, index));
+      // Only trust a marker whose chunk object still exists with the recorded size
+      // (same rule as the coordinator); otherwise re-render.
+      const prior = await readValidMarker(deps.store, job.planHash, index, ext);
       if (prior) {
-        markers.push(JSON.parse(prior) as ChunkDoneMarker);
+        markers.push(prior);
         continue;
       }
       const out = join(work, `chunk-${index}${ext}`);

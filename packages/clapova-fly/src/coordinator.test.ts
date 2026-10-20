@@ -181,3 +181,24 @@ describe("renderOnFly", () => {
     expect(await store.getText(keys.chunkDone("hash1", 1))).toBeNull();
   });
 });
+
+describe("plan stability", () => {
+  it("passes the same maxParallelChunks whatever the running machines count", async () => {
+    const seen: (number | undefined)[] = [];
+    for (const runningMachines of [0, 1]) {
+      const p = primitives(2);
+      const orig = p.plan;
+      p.plan = async (a, c, d) => {
+        seen.push(c.maxParallelChunks);
+        return orig(a, c, d);
+      };
+      try {
+        await renderOnFly(
+          { projectDir: "p", config: { fps: 30, format: "mp4" } as any, queue: { ...queue, runningMachines }, backoffMs: 0, maxAttempts: 1 } as any,
+          { store, guards: DEFAULT_GUARDS, primitives: p, launcher: { run: async () => ({ ok: false }) }, sleep: noSleep, tmpRoot: root } as any,
+        );
+      } catch {}
+    }
+    expect(seen[0]).toBe(seen[1]);
+  });
+});

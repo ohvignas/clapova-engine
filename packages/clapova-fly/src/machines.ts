@@ -92,6 +92,9 @@ export class FlyMachinesClient {
         }
         throw e;
       }
+      if (machine.state === "failed") {
+        return { exitCode: extractExitCode(machine.events) ?? 1, state: machine.state };
+      }
       if (machine.state === "stopped" || machine.state === "destroyed") {
         return { exitCode: extractExitCode(machine.events), state: machine.state };
       }
