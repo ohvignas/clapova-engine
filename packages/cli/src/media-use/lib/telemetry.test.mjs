@@ -12,7 +12,17 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { __anonymousIdForTest, __resetTelemetryForTest, optedOut, track } from "./telemetry.mjs";
+import {
+  __anonymousIdForTest,
+  __resetTelemetryForTest,
+  __setPosthogKeyForTest,
+  optedOut,
+  optedOutByUser,
+  track,
+} from "./telemetry.mjs";
+
+// Clapova fork ships an empty key; these tests exercise a keyed build.
+__setPosthogKeyForTest("phc_test");
 
 function sandbox() {
   const root = mkdtempSync(join(tmpdir(), "mu-telemetry-"));
@@ -42,15 +52,15 @@ test("optedOut respects DO_NOT_TRACK / HYPERFRAMES_NO_TELEMETRY / CI", () => {
   try {
     for (const k of ["DO_NOT_TRACK", "HYPERFRAMES_NO_TELEMETRY", "CI", "NODE_ENV"])
       delete process.env[k];
-    assert.equal(optedOut(), false, "default: tracking allowed");
+    assert.equal(optedOutByUser(), false, "default: tracking allowed");
     process.env.DO_NOT_TRACK = "1";
-    assert.equal(optedOut(), true, "DO_NOT_TRACK opts out");
+    assert.equal(optedOutByUser(), true, "DO_NOT_TRACK opts out");
     delete process.env.DO_NOT_TRACK;
     process.env.HYPERFRAMES_NO_TELEMETRY = "1";
-    assert.equal(optedOut(), true, "HYPERFRAMES_NO_TELEMETRY opts out");
+    assert.equal(optedOutByUser(), true, "HYPERFRAMES_NO_TELEMETRY opts out");
     delete process.env.HYPERFRAMES_NO_TELEMETRY;
     process.env.CI = "true";
-    assert.equal(optedOut(), true, "CI opts out");
+    assert.equal(optedOutByUser(), true, "CI opts out");
   } finally {
     for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k];
     Object.assign(process.env, saved);
@@ -63,14 +73,14 @@ test("optedOut honors telemetryEnabled: false from the shared config", () => {
   try {
     withoutTelemetryOptOut();
     const configPath = join(home, ".hyperframes", "config.json");
-    assert.equal(optedOut(), false, "no config: tracking allowed");
+    assert.equal(optedOutByUser(), false, "no config: tracking allowed");
     mkdirSync(join(home, ".hyperframes"), { recursive: true });
     writeFileSync(configPath, JSON.stringify({ telemetryEnabled: false }));
-    assert.equal(optedOut(), true, "telemetryEnabled: false opts out");
+    assert.equal(optedOutByUser(), true, "telemetryEnabled: false opts out");
     writeFileSync(configPath, JSON.stringify({ telemetryEnabled: true }));
-    assert.equal(optedOut(), false, "telemetryEnabled: true allows tracking");
+    assert.equal(optedOutByUser(), false, "telemetryEnabled: true allows tracking");
     writeFileSync(configPath, "{not json");
-    assert.equal(optedOut(), false, "unreadable config: tracking allowed");
+    assert.equal(optedOutByUser(), false, "unreadable config: tracking allowed");
   } finally {
     restoreEnv(savedEnv);
     rmSync(root, { recursive: true, force: true });
@@ -453,5 +463,19 @@ test("leaves a settings file it cannot read untouched", async () => {
     restoreEnv(savedEnv);
     rmSync(root, { recursive: true, force: true });
     __resetTelemetryForTest();
+  }
+});
+
+test("optedOut is always true in the Clapova fork build (no PostHog key)", () => {
+  const saved = { ...process.env };
+  try {
+    for (const k of ["DO_NOT_TRACK", "HYPERFRAMES_NO_TELEMETRY", "CI", "NODE_ENV"])
+      delete process.env[k];
+    __setPosthogKeyForTest("");
+    assert.equal(optedOutByUser(), false);
+    assert.equal(optedOut(), true);
+  } finally {
+    __setPosthogKeyForTest("phc_test");
+    restoreEnv(saved);
   }
 });
