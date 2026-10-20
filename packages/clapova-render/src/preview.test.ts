@@ -38,3 +38,55 @@ describe("previewFrames", () => {
     await expect(previewFrames({ ...opts, times: [-1] })).rejects.toMatchObject({ code: "INVALID_INPUT" });
   });
 });
+
+describe("previewFrames cancellation during extraction", () => {
+  const abortable = (r: ExtractFrameRequest) =>
+    new Promise<void>((_resolve, reject) => {
+      const fail = () => reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
+      if (r.signal?.aborted) return fail();
+      r.signal?.addEventListener("abort", fail, { once: true });
+    });
+
+  it("reports a user cancel as RENDER_CANCELLED, not retryable", async () => {
+    const outDir = mkdtempSync(join(tmpdir(), "cr-test-"));
+    dirs.push(outDir);
+    const controller = new AbortController();
+    const { api } = fakeProducer();
+    const promise = previewFrames({
+      projectDir: "/p",
+      times: [0],
+      outDir,
+      producer: api,
+      signal: controller.signal,
+      extractFrame: (r) => {
+        setTimeout(() => controller.abort(), 5);
+        return abortable(r);
+      },
+    });
+    await expect(promise).rejects.toMatchObject({ code: "RENDER_CANCELLED", retryable: false });
+  });
+
+  it("bounds a hung extraction with timeoutMs", async () => {
+    const outDir = mkdtempSync(join(tmpdir(), "cr-test-"));
+    dirs.push(outDir);
+    const { api } = fakeProducer();
+    await expect(
+      previewFrames({ projectDir: "/p", times: [0], outDir, producer: api, timeoutMs: 50, extractFrame: abortable }),
+    ).rejects.toMatchObject({ code: "RENDER_TIMEOUT", retryable: true });
+  });
+
+  it("ffmpeg extractor reports an abort as RENDER_CANCELLED", async () => {
+    const { createFfmpegExtractor } = await import("./preview.js");
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      createFfmpegExtractor(process.execPath)({
+        videoPath: "/nope.mp4",
+        timeSeconds: 0,
+        outputPath: join(tmpdir(), "never.png"),
+        maxHeight: 10,
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ code: "RENDER_CANCELLED", retryable: false });
+  });
+});

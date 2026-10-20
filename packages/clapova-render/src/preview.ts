@@ -3,8 +3,8 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ProducerApi } from "./engine.js";
-import { ClapovaRenderError, INVALID_INPUT, PREVIEW_EXTRACT_FAILED } from "./errors.js";
-import { type RenderProgress, renderTimeline } from "./render.js";
+import { ClapovaRenderError, INVALID_INPUT, PREVIEW_EXTRACT_FAILED, RENDER_CANCELLED } from "./errors.js";
+import { anySignal, isAbortError, type RenderProgress, renderTimeline } from "./render.js";
 
 export const MAX_PREVIEW_FRAMES = 12;
 
@@ -76,6 +76,8 @@ export async function previewFrames(options: PreviewFramesOptions): Promise<Prev
   const workDir = mkdtempSync(join(tmpdir(), "clapova-preview-"));
   const videoPath = join(workDir, "preview.mp4");
   const fps = options.fps ?? 30;
+  // timeoutMs bounds the whole preview (render + extraction), not only the render.
+  const startedAt = Date.now();
   try {
     const result = await renderTimeline({
       projectDir: options.projectDir,
@@ -96,23 +98,57 @@ export async function previewFrames(options: PreviewFramesOptions): Promise<Prev
       result.durationSeconds !== undefined
         ? Math.max(0, result.durationSeconds - 1 / fps)
         : Number.POSITIVE_INFINITY;
+    const remainingMs =
+      options.timeoutMs !== undefined ? Math.max(1, options.timeoutMs - (Date.now() - startedAt)) : undefined;
+    const timeoutSignal = remainingMs !== undefined ? AbortSignal.timeout(remainingMs) : undefined;
+    const extractSignal = anySignal([options.signal, timeoutSignal]);
     const frames: PreviewFrame[] = [];
     for (const [index, requested] of times.entries()) {
       const timeSeconds = Math.min(requested, lastFrameTime);
       const path = join(options.outDir, `frame-${String(index).padStart(2, "0")}.png`);
-      await extract({
-        videoPath: result.outputPath,
-        timeSeconds,
-        outputPath: path,
-        maxHeight: options.maxHeight ?? 540,
-        signal: options.signal,
-      });
+      if (extractSignal?.aborted) throw abortedError(options.signal, timeoutSignal);
+      try {
+        await extract({
+          videoPath: result.outputPath,
+          timeSeconds,
+          outputPath: path,
+          maxHeight: options.maxHeight ?? 540,
+          signal: extractSignal,
+        });
+      } catch (error) {
+        if (extractSignal?.aborted && (isAbortError(error) || error instanceof ClapovaRenderError)) {
+          throw abortedError(options.signal, timeoutSignal, error);
+        }
+        throw error;
+      }
       frames.push({ timeSeconds, path });
     }
     return frames;
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }
+}
+
+/** Cancellation during extraction: never retryable when the caller cancelled. */
+function abortedError(callerSignal?: AbortSignal, timeoutSignal?: AbortSignal, cause?: unknown): ClapovaRenderError {
+  if (timeoutSignal?.aborted && !callerSignal?.aborted) {
+    return new ClapovaRenderError({
+      code: "RENDER_TIMEOUT",
+      owner: "system",
+      retryable: true,
+      message: "preview exceeded its time limit during frame extraction",
+      stage: "preview_extract",
+      cause,
+    });
+  }
+  return new ClapovaRenderError({
+    code: RENDER_CANCELLED,
+    owner: "system",
+    retryable: false,
+    message: "preview cancelled during frame extraction",
+    stage: "preview_extract",
+    cause,
+  });
 }
 
 export function createFfmpegExtractor(ffmpegPath?: string): FrameExtractor {
@@ -140,7 +176,16 @@ export function createFfmpegExtractor(ffmpegPath?: string): FrameExtractor {
       });
       child.on("error", (error) =>
         reject(
-          new ClapovaRenderError({
+          request.signal?.aborted
+            ? new ClapovaRenderError({
+                code: RENDER_CANCELLED,
+                owner: "system",
+                retryable: false,
+                message: "frame extraction cancelled",
+                stage: "preview_extract",
+                cause: error,
+              })
+            : new ClapovaRenderError({
             code: PREVIEW_EXTRACT_FAILED,
             owner: "system",
             retryable: true,
@@ -152,6 +197,7 @@ export function createFfmpegExtractor(ffmpegPath?: string): FrameExtractor {
       );
       child.on("close", (code) => {
         if (code === 0) return resolve();
+        if (request.signal?.aborted) return; // the "error" handler already rejected as cancelled
         reject(
           new ClapovaRenderError({
             code: PREVIEW_EXTRACT_FAILED,

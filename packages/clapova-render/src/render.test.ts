@@ -104,3 +104,62 @@ describe("renderTimeline", () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 });
+
+describe("renderTimeline review fixes", () => {
+  it("sets outcome on success", async () => {
+    const { api } = fakeProducer();
+    await expect(renderTimeline({ ...base, producer: api })).resolves.toMatchObject({ outcome: "completed" });
+  });
+
+  it("keeps a real engine error raised once the timeout has fired", async () => {
+    const { api } = fakeProducer(async (_j, _r, signal) => {
+      await new Promise((r) => setTimeout(r, 30));
+      expect(signal?.aborted).toBe(true);
+      throw Object.assign(new Error("chrome crashed"), { name: "Error" });
+    });
+    const err = await renderTimeline({ ...base, producer: api, timeoutMs: 5 }).catch((e) => e);
+    expect(err.code).not.toBe("RENDER_TIMEOUT");
+  });
+
+  it("maps an engine timeout abort to RENDER_TIMEOUT (retryable)", async () => {
+    const { api } = fakeProducer(async (_j, _r, signal) => {
+      await new Promise((r) => setTimeout(r, 30));
+      throw Object.assign(new Error("render_cancelled"), { name: "RenderCancelledError", reason: "timeout" });
+    });
+    await expect(renderTimeline({ ...base, producer: api, timeoutMs: 5 })).rejects.toMatchObject({
+      code: "RENDER_TIMEOUT",
+      retryable: true,
+    });
+  });
+
+  it("maps a user cancel to RENDER_CANCELLED (not retryable), even with a timeout set", async () => {
+    const controller = new AbortController();
+    const { api } = fakeProducer(async (_j, _r, signal) => {
+      controller.abort();
+      expect(signal?.aborted).toBe(true);
+      throw Object.assign(new Error("render_cancelled"), { name: "RenderCancelledError", reason: "user_cancelled" });
+    });
+    await expect(
+      renderTimeline({ ...base, producer: api, signal: controller.signal, timeoutMs: 60_000 }),
+    ).rejects.toMatchObject({ code: "RENDER_CANCELLED", retryable: false });
+  });
+
+  it("combines signal and timeout without AbortSignal.any (Node < 20.3)", async () => {
+    const original = AbortSignal.any;
+    // @ts-expect-error simulate an older runtime
+    AbortSignal.any = undefined;
+    try {
+      const controller = new AbortController();
+      const { api } = fakeProducer(async (_j, _r, signal) => {
+        controller.abort();
+        expect(signal?.aborted).toBe(true);
+        throw Object.assign(new Error("x"), { name: "RenderCancelledError", reason: "user_cancelled" });
+      });
+      await expect(
+        renderTimeline({ ...base, producer: api, signal: controller.signal, timeoutMs: 60_000 }),
+      ).rejects.toMatchObject({ code: "RENDER_CANCELLED" });
+    } finally {
+      AbortSignal.any = original;
+    }
+  });
+});

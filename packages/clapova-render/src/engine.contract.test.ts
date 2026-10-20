@@ -19,6 +19,12 @@ describe("engine contract", () => {
     );
     expect(orchestrator).toMatch(/class RenderCancelledError/);
     expect(orchestrator).toMatch(/class RenderQualityError/);
+    // Reasons the SDK maps to RENDER_TIMEOUT / RENDER_CANCELLED.
+    expect(orchestrator).toMatch(/reason: "user_cancelled" \| "timeout" \| "aborted"/);
+  });
+
+  it("producer sets job.outcome when a render finishes", () => {
+    expect(read("producer/src/services/render/shared.ts")).toMatch(/job\.outcome\s*=/);
   });
 
   it("lint exports lintProject", () => {

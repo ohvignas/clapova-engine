@@ -82,14 +82,32 @@ function validate(options: RenderTimelineOptions): void {
   }
 }
 
+/** Combine signals; falls back to a manual relay where AbortSignal.any is missing (Node < 20.3). */
+export function anySignal(signals: readonly (AbortSignal | undefined)[]): AbortSignal | undefined {
+  const list = signals.filter((s): s is AbortSignal => s !== undefined);
+  if (list.length === 0) return undefined;
+  if (list.length === 1) return list[0];
+  if (typeof AbortSignal.any === "function") return AbortSignal.any(list);
+  const controller = new AbortController();
+  for (const s of list) {
+    if (s.aborted) {
+      controller.abort(s.reason);
+      break;
+    }
+    s.addEventListener("abort", () => controller.abort(s.reason), { once: true });
+  }
+  return controller.signal;
+}
+
 /** Combine the caller's signal and the timeout into one engine signal. */
 function engineSignal(signal?: AbortSignal, timeoutMs?: number): AbortSignal | undefined {
-  const signals = [signal, timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined].filter(
-    (s): s is AbortSignal => s !== undefined,
-  );
-  if (signals.length === 0) return undefined;
-  if (signals.length === 1) return signals[0];
-  return AbortSignal.any(signals);
+  return anySignal([signal, timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined]);
+}
+
+/** True when the error is the engine (or a child process) reacting to an abort. */
+export function isAbortError(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null)?.name;
+  return name === "RenderCancelledError" || name === "AbortError";
 }
 
 export function createMonotonicProgress(
@@ -150,7 +168,9 @@ export async function renderTimeline(options: RenderTimelineOptions): Promise<Re
     );
   } catch (error) {
     // Timeout surfaces as an abort; report it as retryable system failure, not a user cancel.
-    if (signal?.aborted && !options.signal?.aborted && options.timeoutMs) {
+    // Only a genuine abort is a timeout: a real engine error raised just before
+    // the deadline keeps its own code.
+    if (signal?.aborted && !options.signal?.aborted && options.timeoutMs && isAbortError(error)) {
       throw new ClapovaRenderError({
         code: "RENDER_TIMEOUT",
         owner: "system",
