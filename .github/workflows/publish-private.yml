@@ -1,0 +1,61 @@
+name: Publish private
+
+# Publishes the fork's packages to GitHub Packages on a tag. Never runs on
+# pull requests or branch pushes; create the tag by hand to trigger it.
+# Tags look like v0.8.177-clapova.1 (the "-clapova.N" suffix is mandatory).
+permissions: {}
+
+on:
+  push:
+    tags:
+      - "v*-clapova.*"
+
+jobs:
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    env:
+      HYPERFRAMES_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
+        with:
+          bun-version: 1.3.13
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: "@clapova-hf"
+
+      - name: Resolve version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-clapova\.[0-9]+$'; then
+            echo "::error::Tag $GITHUB_REF_NAME must look like vX.Y.Z-clapova.N"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: corepack enable
+      - run: corepack prepare pnpm@10.17.1 --activate
+      - run: bun install --frozen-lockfile
+      - name: Contract test
+        run: node --test scripts/clapova/contract.test.mjs
+      - run: bun run build
+
+      # Packages are renamed from @hyperframes/* to @clapova-hf/* only inside
+      # this job's checkout. The source tree keeps the upstream names so that
+      # upstream merges stay clean.
+      - name: Rename scope and publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node scripts/clapova/publish-private.mjs "$VERSION"
