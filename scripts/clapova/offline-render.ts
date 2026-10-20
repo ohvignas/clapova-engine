@@ -6,7 +6,10 @@
 import { existsSync, mkdtempSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { createRenderJob, executeRenderJob } from "../../packages/producer/src/services/renderOrchestrator.js";
+import {
+  createRenderJob,
+  executeRenderJob,
+} from "../../packages/producer/src/services/renderOrchestrator.js";
 
 const fixtureDir = resolve(import.meta.dirname, "fixtures/offline-render");
 

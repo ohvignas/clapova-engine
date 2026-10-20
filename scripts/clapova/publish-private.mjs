@@ -29,16 +29,19 @@ export const PUBLISH_ORDER = [
   "cli",
 ];
 
-const rename = (name) => (name.startsWith(FROM_SCOPE) ? TO_SCOPE + name.slice(FROM_SCOPE.length) : name);
+const rename = (name) =>
+  name.startsWith(FROM_SCOPE) ? TO_SCOPE + name.slice(FROM_SCOPE.length) : name;
 
 /** Pure transform of one package.json. */
 export function transformPackageJson(pkg, version) {
   const out = { ...pkg, name: rename(pkg.name), version };
-  for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+  const fields = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"];
+  for (const field of fields) {
     if (!pkg[field]) continue;
     out[field] = Object.fromEntries(Object.entries(pkg[field]).map(([k, v]) => [rename(k), v]));
   }
-  out.repository = { ...(pkg.repository ?? {}), url: "https://github.com/ohvignas/clapova-engine" };
+  const url = "https://github.com/ohvignas/clapova-engine";
+  out.repository = { ...(pkg.repository ?? {}), url };
   out.publishConfig = { ...(pkg.publishConfig ?? {}), registry: REGISTRY, access: "restricted" };
   return out;
 }
@@ -48,11 +51,16 @@ export function rewriteSpecifiers(source) {
   return source.replaceAll(FROM_SCOPE, TO_SCOPE);
 }
 
+// Published files outside dist (templates, skills) can import the scope too.
+const TEXT_FILE = /\.(?:js|mjs|cjs|ts|mts|cts|json|html|md)$/;
+const SKIP_DIRS = new Set(["node_modules", ".git", "src"]);
+
 function* walk(dir) {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
+    if (SKIP_DIRS.has(entry)) continue;
     if (statSync(path).isDirectory()) yield* walk(path);
-    else if (/\.(?:js|mjs|cjs|d\.ts|d\.mts|d\.cts)$/.test(entry)) yield path;
+    else if (TEXT_FILE.test(entry) && entry !== "package.json") yield path;
   }
 }
 
@@ -67,13 +75,10 @@ function main() {
   for (const dir of PUBLISH_ORDER) {
     const base = join(ROOT, "packages", dir);
     const file = join(base, "package.json");
-    writeFileSync(file, JSON.stringify(transformPackageJson(JSON.parse(readFileSync(file, "utf8")), version), null, 2) + "\n");
-    try {
-      for (const path of walk(join(base, "dist"))) {
-        writeFileSync(path, rewriteSpecifiers(readFileSync(path, "utf8")));
-      }
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
+    const pkg = transformPackageJson(JSON.parse(readFileSync(file, "utf8")), version);
+    writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
+    for (const path of walk(base)) {
+      writeFileSync(path, rewriteSpecifiers(readFileSync(path, "utf8")));
     }
   }
   for (const dir of PUBLISH_ORDER) {

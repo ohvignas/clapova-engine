@@ -2,13 +2,14 @@ name: Publish private
 
 # Publishes the fork's packages to GitHub Packages on a tag. Never runs on
 # pull requests or branch pushes; create the tag by hand to trigger it.
-# Tags look like v0.8.177-clapova.1 (the "-clapova.N" suffix is mandatory).
+# Tags look like clapova-v0.8.177-clapova.1. The "clapova-v" prefix keeps them
+# out of upstream publish.yml, which fires on v*-* and would push to public npm.
 permissions: {}
 
 on:
   push:
     tags:
-      - "v*-clapova.*"
+      - "clapova-v*"
 
 jobs:
   publish:
@@ -36,9 +37,9 @@ jobs:
       - name: Resolve version from tag
         id: version
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME#clapova-v}"
           if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-clapova\.[0-9]+$'; then
-            echo "::error::Tag $GITHUB_REF_NAME must look like vX.Y.Z-clapova.N"
+            echo "::error::Tag $GITHUB_REF_NAME must look like clapova-vX.Y.Z-clapova.N"
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"

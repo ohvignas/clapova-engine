@@ -22,7 +22,8 @@ export function listProducerValueExports(root = ROOT) {
       names.add(alias[alias.length - 1].trim());
     }
   }
-  for (const m of source.matchAll(/export\s+(?:async\s+)?(?:const|function|class)\s+([A-Za-z0-9_$]+)/g)) {
+  const exportRe = /export\s+(?:async\s+)?(?:const|function|class)\s+([A-Za-z0-9_$]+)/g;
+  for (const m of source.matchAll(exportRe)) {
     names.add(m[1]);
   }
   return [...names].sort();
@@ -47,7 +48,8 @@ export function listLintCodes(root = ROOT) {
   const codes = new Set();
   for (const file of walk(join(root, "packages/lint/src"))) {
     const source = stripComments(readFileSync(file, "utf8"));
-    for (const m of source.matchAll(/\bcode:\s*"([a-z][a-z0-9]*(?:_[a-z0-9]+)+)"/g)) codes.add(m[1]);
+    const codeRe = /\bcode:\s*"([a-z][a-z0-9]*(?:_[a-z0-9]+)+)"/g;
+    for (const m of source.matchAll(codeRe)) codes.add(m[1]);
   }
   return [...codes].sort();
 }

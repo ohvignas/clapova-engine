@@ -23,7 +23,8 @@ describe("clapova contract", () => {
     const version = readCompositionContractVersion();
     assert.ok(
       golden.knownCompositionContractVersions.includes(version),
-      `unknown COMPOSITION_CONTRACT_VERSION ${version}; review the compose output of clapova-compose, then run contract.mjs --update`,
+      `unknown COMPOSITION_CONTRACT_VERSION ${version}; ` +
+        "review the compose output of clapova-compose, then run contract.mjs --update",
     );
   });
 
