@@ -20,4 +20,4 @@ Remote : `git remote add upstream https://github.com/heygen-com/hyperframes`.
 
 | Fichier(s) | Ticket « patch amont » | Raison | PR amont | Statut |
 |---|---|---|---|---|
-| _aucun_ | | | | |
+| `packages/producer/src/services/assetMediaType.ts`, `packages/producer/src/services/htmlCompiler.ts` (+ test) | Tâche 1.2 : erreur média détaillée | `AssetMediaTypeMismatchError` porte, hors sérialisation (propriété non énumérable `details`), l'id d'élément, le `src` écrit, le type attendu et le type détecté. `describeForAuthor()` renvoie un message actionnable pour l'agent. Message, télémétrie et JSON inchangés. | à proposer | candidat amont |

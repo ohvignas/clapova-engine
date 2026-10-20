@@ -553,7 +553,12 @@ async function resolveMediaDuration(
       }
       throw withSrcContext(error);
     }
-    assertAssetMediaTypeProfile(tagName === "video" ? "video" : "audio", profile, elementIdentity);
+    assertAssetMediaTypeProfile(
+      tagName === "video" ? "video" : "audio",
+      profile,
+      elementIdentity,
+      src,
+    );
 
     let metadata: { durationSeconds: number };
     if (tagName === "video") {
