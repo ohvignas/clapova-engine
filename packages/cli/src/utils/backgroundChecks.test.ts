@@ -3,6 +3,9 @@ import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Clapova fork: the update check is opt-in; these tests exercise it switched on.
+process.env.HYPERFRAMES_FORK_UPDATE_CHECK = "1";
+
 const env = vi.hoisted(() => ({ dev: false }));
 vi.mock("./env.js", () => ({ isDevMode: () => env.dev }));
 const disk = vi.hoisted(() => ({ config: {} as Record<string, unknown> }));

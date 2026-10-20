@@ -295,7 +295,22 @@ describe("CLI lifecycle", () => {
     }
   });
 
+  it("starts no background check by default (Clapova fork)", async () => {
+    const launchBackgroundChecks = vi.fn();
+    mockInitCommand(vi.fn());
+    mockTelemetry();
+    vi.doMock("./utils/backgroundChecks.js", () => ({ launchBackgroundChecks }));
+    delete process.env.HYPERFRAMES_FORK_UPDATE_CHECK;
+
+    process.argv = ["node", "cli.ts", "init"];
+    await import("./cli.js");
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(launchBackgroundChecks).not.toHaveBeenCalled();
+  });
+
   it("starts the background checks in a child and reads only the caches itself", async () => {
+    vi.stubEnv("HYPERFRAMES_FORK_UPDATE_CHECK", "1");
     const launchBackgroundChecks = vi.fn();
     const checkForUpdate = vi.fn();
     mockInitCommand(vi.fn());

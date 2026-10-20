@@ -6,13 +6,12 @@
 
 import { getAnonymousId, hasShownNotice, markNoticeShown } from "./config";
 import { browserTelemetryAllowed } from "./policy";
+import { POSTHOG_API_KEY } from "./posthogKey";
 import { getBrowserSystemMeta } from "./system";
 import { canaryEventProperties } from "./canary";
 import { recordBreadcrumb } from "./breadcrumbs";
 import { studioApiFetch } from "../utils/studioApiFetch";
 
-// Write-only PostHog project key, safe to embed in client code.
-const POSTHOG_API_KEY = "phc_zjjbX0PnWxERXrMHhkEJWj9A9BhGVLRReICgsfTMmpx";
 const POSTHOG_HOST = "https://us.i.posthog.com";
 const FLUSH_INTERVAL_MS = 1_000;
 
