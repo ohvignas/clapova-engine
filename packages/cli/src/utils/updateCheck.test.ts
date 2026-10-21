@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// Clapova fork: the update check is opt-in; these tests exercise it switched on.
+process.env.HYPERFRAMES_FORK_UPDATE_CHECK = "1";
 import { isSafeVersion, printDeprecationNotice, withMeta } from "./updateCheck.js";
 
 const dns = vi.hoisted(() => ({ answers: true }));

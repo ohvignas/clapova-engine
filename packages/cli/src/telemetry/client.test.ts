@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+// Clapova fork ships an empty key (telemetry_disabled_build); these tests need a live one.
+vi.mock("./posthogKey.js", () => ({ POSTHOG_API_KEY: "phc_test" }));
+
 // CI exports HYPERFRAMES_NO_TELEMETRY=1 (and users may set DO_NOT_TRACK), which
 // makes shouldTrack() short-circuit — and it caches that decision for the module's
 // lifetime. Clear both BEFORE the module under test is imported / first tracks.

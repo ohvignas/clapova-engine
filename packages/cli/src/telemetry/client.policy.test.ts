@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// Clapova fork ships an empty key (telemetry_disabled_build); these tests need a live one.
+vi.mock("./posthogKey.js", () => ({ POSTHOG_API_KEY: "phc_test" }));
+
 async function loadShouldTrack(env: { HYPERFRAMES_NO_TELEMETRY?: string; DO_NOT_TRACK?: string }) {
   vi.resetModules();
   vi.doMock("../utils/env.js", () => ({ isDevMode: () => false }));

@@ -9,7 +9,8 @@ import { dirname, join } from "node:path";
 import { withFileLock } from "./config-lock.mjs";
 import { globalMediaDir } from "./media-home.mjs";
 
-const POSTHOG_API_KEY = "phc_zjjbX0PnWxERXrMHhkEJWj9A9BhGVLRReICgsfTMmpx";
+// Clapova fork: empty key, so optedOut() is always true and nothing is sent.
+let POSTHOG_API_KEY = "";
 const POSTHOG_HOST = "https://us.i.posthog.com";
 const TIMEOUT_MS = 1500;
 let identifiedAccount = false;
@@ -35,8 +36,13 @@ function posthogHost() {
   return override || POSTHOG_HOST;
 }
 
-/** True when telemetry must NOT be sent (opt-out envs, CI, dev, shared config). */
+/** True when telemetry must NOT be sent: a build without a key (the Clapova fork) or a user opt-out. */
 export function optedOut() {
+  return !POSTHOG_API_KEY.startsWith("phc_") || optedOutByUser();
+}
+
+/** True when the user or environment opts out (opt-out envs, CI, dev, shared config). */
+export function optedOutByUser() {
   return (
     // `hyperframes telemetry disable` writes telemetryEnabled: false to the
     // shared config; one opt-out must cover the CLI and the media-use scripts.
@@ -205,6 +211,11 @@ export async function track(event, properties = {}) {
 
 export function __anonymousIdForTest() {
   return anonymousId();
+}
+
+/** Tests only: the fork ships no key, so tests that exercise sending set one. */
+export function __setPosthogKeyForTest(key) {
+  POSTHOG_API_KEY = key;
 }
 
 export function __resetTelemetryForTest() {

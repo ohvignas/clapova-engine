@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Clapova fork: the update check is opt-in; these tests exercise it switched on.
+process.env.HYPERFRAMES_FORK_UPDATE_CHECK = "1";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
