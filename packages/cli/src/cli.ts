@@ -137,7 +137,7 @@ const commandLoaders = {
   present: () => import("./commands/present.js").then((m) => m.default),
   preview: () =>
     assertStudioWorkspaceBuilt().then(() => import("./commands/preview.js").then((m) => m.default)),
-  publish: () => import("./commands/publish.js").then((m) => m.default),
+  publish: () => import("./commands/disabled.js").then((m) => m.disabledCommand("publish")),
   open: () => import("./commands/open.js").then((m) => m.default),
   "catch-up": () => import("./commands/catch-up.js").then((m) => m.default),
   render: () => import("./commands/render.js").then((m) => m.default),
@@ -165,7 +165,7 @@ const commandLoaders = {
   clean: () => import("./commands/clean.js").then((m) => m.default),
   upgrade: () => import("./commands/upgrade.js").then((m) => m.default),
   skills: () => import("./commands/skills.js").then((m) => m.default),
-  feedback: () => import("./commands/feedback.js").then((m) => m.default),
+  feedback: () => import("./commands/disabled.js").then((m) => m.disabledCommand("feedback")),
   telemetry: () => import("./commands/telemetry.js").then((m) => m.default),
   events: () => import("./commands/events.js").then((m) => m.default),
   validate: () => import("./commands/validate.js").then((m) => m.default),
@@ -177,7 +177,7 @@ const commandLoaders = {
   capture: () => import("./commands/capture.js").then((m) => m.default),
   lambda: () => import("./commands/lambda.js").then((m) => m.default),
   cloudrun: () => import("./commands/cloudrun.js").then((m) => m.default),
-  cloud: () => import("./commands/cloud.js").then((m) => m.default),
+  cloud: () => import("./commands/disabled.js").then((m) => m.disabledCommand("cloud")),
   auth: () => import("./commands/auth.js").then((m) => m.default),
   figma: () => import("./commands/figma.js").then((m) => m.default),
 };
@@ -263,7 +263,11 @@ if (
 // tell the user to go run `skills update` — that's either redundant (it just
 // did) or, worse, misleading (it printed a stale nudge count from the last
 // cached check while reporting fresh results of its own).
+// Clapova fork: no update or skills check and no background self-upgrade (no outbound
+// network) unless HYPERFRAMES_FORK_UPDATE_CHECK=1 opts back in.
+const UPDATE_CHECKS_ENABLED = process.env["HYPERFRAMES_FORK_UPDATE_CHECK"] === "1";
 if (
+  UPDATE_CHECKS_ENABLED &&
   !isHelp &&
   !hasJsonFlag &&
   command !== "upgrade" &&

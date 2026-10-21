@@ -1,0 +1,22 @@
+Clapova Engine
+Copyright 2026 Clapova
+
+Clapova Engine, basé sur HyperFrames (HeyGen), Apache 2.0.
+
+This product is a fork of HyperFrames (https://github.com/heygen-com/hyperframes),
+developed by HeyGen and licensed under the Apache License, Version 2.0.
+The full license text is in the LICENSE file. Clapova Engine is not
+affiliated with or endorsed by HeyGen. "HyperFrames" and "HeyGen" are names
+of their respective owners and are used here only to identify the origin of
+the code.
+
+Files modified relative to upstream HyperFrames (Apache 2.0, section 4(b)):
+
+- NOTICE (added)
+- README.md (fork notice, upstream labels on install commands, issue links)
+- .github/workflows/publish.yml -> .github/workflows-disabled/publish.yml (disabled)
+- .github/workflows/sync-skills-to-clawhub.yml -> .github/workflows-disabled/sync-skills-to-clawhub.yml (disabled)
+- .github/workflows/catalog-publish.yml -> .github/workflows-disabled/catalog-publish.yml (disabled)
+- .github/workflows/canary-sunset.yml -> .github/workflows-disabled/canary-sunset.yml (disabled)
+
+Every later change to an upstream file must be added to this list.

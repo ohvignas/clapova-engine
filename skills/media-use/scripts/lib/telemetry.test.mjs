@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
-import { optedOut } from "./telemetry.mjs";
+import { optedOut, optedOutByUser } from "./telemetry.mjs";
 
 // optedOut() reads ~/.hyperframes/config.json and env vars. Point HOME at a temp
 // dir so the run never touches the real config, and pin the env opt-outs to a
@@ -44,30 +44,35 @@ test.after(() => {
 
 test("optedOut is false with no config and no opt-out env", () => {
   writeConfig(null);
-  assert.equal(optedOut(), false);
+  assert.equal(optedOutByUser(), false);
 });
 
 test("optedOut honors telemetryEnabled: false from the shared config", () => {
   writeConfig(JSON.stringify({ telemetryEnabled: false }));
-  assert.equal(optedOut(), true);
+  assert.equal(optedOutByUser(), true);
 });
 
 test("optedOut is false when the shared config enables telemetry", () => {
   writeConfig(JSON.stringify({ telemetryEnabled: true }));
-  assert.equal(optedOut(), false);
+  assert.equal(optedOutByUser(), false);
 });
 
 test("optedOut treats an unreadable shared config as no opt-out", () => {
   writeConfig("{not json");
-  assert.equal(optedOut(), false);
+  assert.equal(optedOutByUser(), false);
 });
 
 test("optedOut still honors the env opt-outs", () => {
   writeConfig(JSON.stringify({ telemetryEnabled: true }));
   process.env.DO_NOT_TRACK = "1";
   try {
-    assert.equal(optedOut(), true);
+    assert.equal(optedOutByUser(), true);
   } finally {
     delete process.env.DO_NOT_TRACK;
   }
+});
+
+test("optedOut is always true in the Clapova fork build (no PostHog key)", () => {
+  writeConfig(JSON.stringify({ telemetryEnabled: true }));
+  assert.equal(optedOut(), true);
 });

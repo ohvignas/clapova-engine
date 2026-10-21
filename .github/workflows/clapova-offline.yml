@@ -1,0 +1,50 @@
+name: clapova-offline
+
+# Renders a local composition with the network cut (docker --network none).
+# A pass shows the render path needs no outbound request beyond local assets.
+permissions:
+  contents: read
+
+env:
+  HYPERFRAMES_NO_TELEMETRY: "1"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/producer/**"
+      - "packages/engine/**"
+      - "packages/core/**"
+      - "scripts/clapova/**"
+      - "Dockerfile.test"
+      - ".github/workflows/clapova-offline.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/producer/**"
+      - "packages/engine/**"
+      - "packages/core/**"
+      - "scripts/clapova/**"
+      - "Dockerfile.test"
+
+concurrency:
+  group: clapova-offline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-render:
+    name: Offline render
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build the test image
+        run: docker build -f Dockerfile.test -t clapova-engine:offline .
+      - name: Render with the network disabled
+        run: |
+          docker run --rm --network none \
+            -e HYPERFRAMES_NO_TELEMETRY=1 \
+            -v "$PWD/scripts/clapova:/app/scripts/clapova:ro" \
+            --entrypoint bunx \
+            clapova-engine:offline tsx /app/scripts/clapova/offline-render.ts

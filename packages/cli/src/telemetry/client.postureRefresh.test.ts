@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+// Clapova fork ships an empty key (telemetry_disabled_build); these tests need a live one.
+vi.mock("./posthogKey.js", () => ({ POSTHOG_API_KEY: "phc_test" }));
+
 // The suppression half of the cross-process opt-out. `hyperframes preview` is
 // long-lived, and Studio has no poller for /api/telemetry-identity, so a
 // render that finishes AFTER `hyperframes telemetry disable` ran in another

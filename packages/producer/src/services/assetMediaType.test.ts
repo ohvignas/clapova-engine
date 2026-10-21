@@ -174,6 +174,39 @@ describe("preflightCompositionAssetMediaTypes", () => {
     expect((caught as Error).message).not.toContain("image-element");
   });
 
+  it("carries actionable author detail without leaking it into serialization", async () => {
+    let caught: unknown;
+    try {
+      await run({ videoSrc: "extensionless-still", imageSrc: "extensionless-video" });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(AssetMediaTypeMismatchError);
+    const error = caught as AssetMediaTypeMismatchError;
+    expect([...error.details].sort((a, b) => a.elementId.localeCompare(b.elementId))).toEqual([
+      expect.objectContaining({
+        elementId: "image-element",
+        src: "extensionless-video",
+        expected: "image",
+        detected: "video",
+      }),
+      expect.objectContaining({
+        elementId: "video-element",
+        src: "extensionless-still",
+        expected: "video",
+        detected: "image",
+      }),
+    ]);
+    const described = error.describeForAuthor();
+    expect(described).toContain('element "video-element" src="extensionless-still"');
+    expect(described).toContain("expected video, detected image");
+    expect(described).toContain("use a <img> element");
+    expect(described).toContain('element "image-element" src="extensionless-video"');
+    expect(described).not.toContain(fixtureDir);
+    expect(Object.keys(error)).not.toContain("details");
+    expect(JSON.stringify(error)).not.toContain("extensionless-");
+  });
+
   it("catches the zero-video image-probe shape before extraction", async () => {
     const mismatched = composition({ imageSrc: "extensionless-audio" });
     expect(mismatched.videos).toHaveLength(0);
@@ -261,5 +294,36 @@ describe("preflightCompositionAssetMediaTypes", () => {
 
     copyFileSync(videoPath, mutablePath);
     await expect(run({ videoSrc: "mutable-media" }, signal)).resolves.toBeUndefined();
+  });
+});
+
+describe("AssetMediaTypeMismatchError.describeForAuthor", () => {
+  const base = { expected: "video" as const, detected: "audio" as const, elementFingerprint: "f" };
+
+  it("falls back to the bounded message without details", () => {
+    const error = new AssetMediaTypeMismatchError([base]);
+    expect(error.details).toEqual([]);
+    expect(error.describeForAuthor()).toBe(error.message);
+  });
+
+  it("bounds values, flattens newlines, and caps the list", () => {
+    const details = Array.from({ length: 25 }, (_, i) => ({
+      ...base,
+      elementId: `clip-${i}`,
+      src: i === 0 ? `a\nb${"x".repeat(500)}` : `s${i}.mp3`,
+    }));
+    const text = new AssetMediaTypeMismatchError(details, details).describeForAuthor();
+    expect(text.split("\n")).toHaveLength(22);
+    expect(text).toContain('src="a b');
+    expect(text).toContain("…");
+    expect(text).toContain("and 5 more");
+    expect(text).toContain("use a <audio> element");
+  });
+
+  it("explains an unknown detected type", () => {
+    const d = { ...base, detected: "unknown" as const, elementId: "c", src: "x.bin" };
+    expect(new AssetMediaTypeMismatchError([d], [d]).describeForAuthor()).toContain(
+      "no usable audio or visual stream",
+    );
   });
 });

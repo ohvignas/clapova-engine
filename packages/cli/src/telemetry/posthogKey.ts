@@ -7,4 +7,4 @@
  * A cycle through the telemetry config is the kind that bites at module-init
  * time, so the constant moved instead of the dependency being tolerated.
  */
-export const POSTHOG_API_KEY = "phc_zjjbX0PnWxERXrMHhkEJWj9A9BhGVLRReICgsfTMmpx";
+export const POSTHOG_API_KEY = "";

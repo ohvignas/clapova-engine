@@ -164,6 +164,9 @@ export function printDeprecationNotice(command: string): void {
 
 /** True when the update check is off: dev mode, CI, or the HYPERFRAMES_NO_UPDATE_CHECK opt-out. */
 export function updateCheckDisabled(): boolean {
+  // Clapova fork: the update check never reaches the npm registry unless
+  // HYPERFRAMES_FORK_UPDATE_CHECK=1 opts back in.
+  if (process.env["HYPERFRAMES_FORK_UPDATE_CHECK"] !== "1") return true;
   if (isDevMode()) return true;
   if (process.env["CI"] === "true" || process.env["CI"] === "1") return true;
   return process.env["HYPERFRAMES_NO_UPDATE_CHECK"] === "1";

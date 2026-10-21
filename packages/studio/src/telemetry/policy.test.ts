@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Clapova fork ships an empty key (telemetry_disabled_build); these tests need a live one.
+vi.mock("./posthogKey", () => ({ POSTHOG_API_KEY: "phc_test" }));
+
 // Each control the browser telemetry policy enforces, asserted individually.
 // This is the SSOT that `telemetry/client.ts`, `utils/studioTelemetry.ts` and
 // canary enrolment all consult, so a gap here is a gap in all three — which is

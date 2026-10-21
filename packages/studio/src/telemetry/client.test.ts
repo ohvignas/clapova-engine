@@ -2,6 +2,9 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+// Clapova fork ships an empty key (telemetry_disabled_build); these tests need a live one.
+vi.mock("./posthogKey", () => ({ POSTHOG_API_KEY: "phc_test" }));
+
 // `shouldTrack()` reads module-level constants evaluated at module load time,
 // so changing env after import has no effect. Each test resets module cache.
 

@@ -16,12 +16,7 @@
 // ---------------------------------------------------------------------------
 
 import { isOptedOut } from "./config";
-
-// Write-only PostHog project key, safe to embed in client code. Duplicated
-// from client.ts intentionally — the eligibility check must not drag the
-// transport (and its queue/timer state) into modules that only need the
-// policy.
-const POSTHOG_API_KEY = "phc_zjjbX0PnWxERXrMHhkEJWj9A9BhGVLRReICgsfTMmpx";
+import { POSTHOG_API_KEY } from "./posthogKey";
 
 /** Legacy opt-out key predating `telemetry/config.ts`. Still honoured so
  *  anyone already opted out is never quietly re-enabled. */

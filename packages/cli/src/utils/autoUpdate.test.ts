@@ -5,6 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Clapova fork: the update check is opt-in; these tests exercise it switched on.
+process.env.HYPERFRAMES_FORK_UPDATE_CHECK = "1";
+
 /**
  * These tests exercise the policy — when a background install should or
  * shouldn't be scheduled — without ever spawning a real child process. The

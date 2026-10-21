@@ -24,13 +24,46 @@ export interface AssetMediaTypeMismatch {
   elementFingerprint: string;
 }
 
+/**
+ * Author-facing detail for one mismatch: the authored element id and the
+ * authored `src` (as written in the composition, never the resolved path).
+ * Kept off the enumerable/serialized surface of the error so telemetry and
+ * logs stay bounded; callers that talk to the composition author (an editor,
+ * an AI agent) read it through `details` / `describeForAuthor()`.
+ */
+export interface AssetMediaTypeMismatchDetail extends AssetMediaTypeMismatch {
+  elementId: string;
+  src: string;
+}
+
+const MAX_DESCRIBED_MISMATCHES = 20;
+const MAX_DESCRIBED_VALUE_LENGTH = 200;
+
+function boundValue(value: string): string {
+  const flat = value.replace(/[\r\n\t]+/g, " ");
+  return flat.length > MAX_DESCRIBED_VALUE_LENGTH
+    ? `${flat.slice(0, MAX_DESCRIBED_VALUE_LENGTH)}…`
+    : flat;
+}
+
+function hintFor(expected: AssetElementMediaType, detected: DetectedAssetMediaType): string {
+  if (detected === "unknown") return "the file has no usable audio or visual stream";
+  const tag = detected === "image" ? "<img>" : `<${detected}>`;
+  return `use a ${tag} element for this file, or point the <${expected === "image" ? "img" : expected}> at a ${expected} file`;
+}
+
 export class AssetMediaTypeMismatchError extends Error {
   readonly code = ASSET_MEDIA_TYPE_MISMATCH;
   readonly owner = "user" as const;
   readonly retryable = false as const;
   readonly mismatches: readonly AssetMediaTypeMismatch[];
+  /** Non-enumerable: not serialized by JSON.stringify. See AssetMediaTypeMismatchDetail. */
+  declare readonly details: readonly AssetMediaTypeMismatchDetail[];
 
-  constructor(mismatches: readonly AssetMediaTypeMismatch[]) {
+  constructor(
+    mismatches: readonly AssetMediaTypeMismatch[],
+    details: readonly AssetMediaTypeMismatchDetail[] = [],
+  ) {
     const expectedKinds = [...new Set(mismatches.map((item) => item.expected))].sort().join(",");
     super(
       `${mismatches.length} composition asset(s) do not match their authored media element type` +
@@ -38,6 +71,32 @@ export class AssetMediaTypeMismatchError extends Error {
     );
     this.name = "AssetMediaTypeMismatchError";
     this.mismatches = mismatches;
+    Object.defineProperty(this, "details", {
+      value: details,
+      enumerable: false,
+      writable: false,
+      configurable: false,
+    });
+  }
+
+  /**
+   * Actionable, multi-line description naming each offending element, its
+   * authored src, the expected and detected media types, and a fix hint.
+   * Falls back to the bounded message when no details were recorded.
+   */
+  describeForAuthor(): string {
+    if (this.details.length === 0) return this.message;
+    const shown = this.details.slice(0, MAX_DESCRIBED_MISMATCHES);
+    const lines = shown.map(
+      (d) =>
+        `- element "${boundValue(d.elementId)}" src="${boundValue(d.src)}": ` +
+        `expected ${d.expected}, detected ${d.detected} (${hintFor(d.expected, d.detected)})`,
+    );
+    const hidden = this.details.length - shown.length;
+    if (hidden > 0) lines.push(`- … and ${hidden} more`);
+    return [`${this.details.length} asset(s) do not match their media element type:`, ...lines].join(
+      "\n",
+    );
   }
 }
 
@@ -61,15 +120,18 @@ export function assertAssetMediaTypeProfile(
   expected: AssetElementMediaType,
   profile: MediaProbeProfile,
   elementIdentity: string,
+  src?: string,
 ): void {
   if (mediaProfileMatchesElementType(expected, profile)) return;
-  throw new AssetMediaTypeMismatchError([
-    {
-      expected,
-      detected: detectedAssetMediaType(profile),
-      elementFingerprint: fingerprintElementId(elementIdentity),
-    },
-  ]);
+  const mismatch: AssetMediaTypeMismatch = {
+    expected,
+    detected: detectedAssetMediaType(profile),
+    elementFingerprint: fingerprintElementId(elementIdentity),
+  };
+  throw new AssetMediaTypeMismatchError(
+    [mismatch],
+    src === undefined ? [] : [{ ...mismatch, elementId: elementIdentity, src }],
+  );
 }
 
 interface CompositionMediaAssets {
@@ -131,6 +193,7 @@ export async function preflightCompositionAssetMediaTypes(input: {
   }
 
   const mismatches: AssetMediaTypeMismatch[] = [];
+  const details: AssetMediaTypeMismatchDetail[] = [];
   const notMediaFingerprints: string[] = [];
   const entries = [...byPath];
   await Promise.all(
@@ -163,11 +226,13 @@ export async function preflightCompositionAssetMediaTypes(input: {
         }
         for (const reference of pathReferences) {
           if (mediaProfileMatchesElementType(reference.expected, profile)) continue;
-          mismatches.push({
+          const mismatch: AssetMediaTypeMismatch = {
             expected: reference.expected,
             detected: detectedAssetMediaType(profile),
             elementFingerprint: fingerprintElementId(reference.id),
-          });
+          };
+          mismatches.push(mismatch);
+          details.push({ ...mismatch, elementId: reference.id, src: reference.src });
         }
       }),
     ),
@@ -176,5 +241,5 @@ export async function preflightCompositionAssetMediaTypes(input: {
   // Thrown ahead of the mismatch aggregate: "this file is an HTML page" is the
   // actionable diagnosis, while the type mismatch it also produces is a symptom.
   if (notMediaFingerprints.length > 0) throw new NotMediaPayloadError(notMediaFingerprints);
-  if (mismatches.length > 0) throw new AssetMediaTypeMismatchError(mismatches);
+  if (mismatches.length > 0) throw new AssetMediaTypeMismatchError(mismatches, details);
 }
