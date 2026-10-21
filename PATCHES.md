@@ -25,3 +25,4 @@ Remote : `git remote add upstream https://github.com/heygen-com/hyperframes`.
 ## Paquets Clapova (hors patchs amont)
 
 - `packages/clapova-render` (`@clapova/render`) : API worker `renderTimeline` / `previewFrames` / `checkComposition` au-dessus de `producer` et `lint`. Aucun fichier de `core/engine/producer` modifié. Le test de contrat `src/engine.contract.test.ts` vérifie les exports utilisés.
+- `packages/clapova-fly` : adaptateur de rendu distribué Fly. Importe seulement l'API publique `@hyperframes/producer/distributed`, aucun patch amont.
