@@ -16,6 +16,8 @@
 
 <p align="center"><b>Write HTML. Render video. Built for agents.</b></p>
 
+> **Clapova Engine** is a fork of [HyperFrames](https://github.com/heygen-com/hyperframes) by HeyGen, distributed under the Apache License 2.0. It is not affiliated with or endorsed by HeyGen. See [NOTICE](NOTICE) for attribution and the list of modified files. The links and install commands below point to the upstream HyperFrames project.
+
 <p align="center">
   <a href="https://www.hyperframes.dev/studio">Studio</a> |
   <a href="https://hyperframes.heygen.com/quickstart">Quickstart</a> |
@@ -39,7 +41,7 @@ HyperFrames is an open-source framework for turning HTML, CSS, media, and seekab
 For Claude Code, install the versioned plugin:
 
 ```bash
-claude plugin marketplace add heygen-com/hyperframes
+claude plugin marketplace add heygen-com/hyperframes   # upstream HyperFrames plugin
 claude plugin install hyperframes@hyperframes
 ```
 
@@ -50,7 +52,7 @@ for Copilot, VS Code, Cursor, Gemini CLI, updates, and migration.
 For standalone skills (including OpenCode), use:
 
 ```bash
-npx skills add heygen-com/hyperframes
+npx skills add heygen-com/hyperframes   # upstream HyperFrames skills
 ```
 
 > The picker opens with nothing pre-selected — the **Core Skills** group is all you need: the `/hyperframes` router installs each creation workflow on demand. Agents and non-interactive runs should use `npx hyperframes skills update` instead — it installs exactly the core set, whereas `skills add --all` installs all 21 published skills. The six repo-internal skills under `.claude/skills` / `.agents/skills` are excluded by default. For the full published set use `npx hyperframes skills`.
@@ -119,7 +121,7 @@ Atomic capabilities the creation workflows compose against — pull one when you
 | `/hyperframes-keyframes` | Seek-safe keyframe authoring across runtimes — GSAP timelines, CSS keyframes, Anime.js, WAAPI, FLIP, paths, masks, SVG morph/draw, 3D depth — plus `hyperframes keyframes` diagnostics for rendered motion.                                                                                                                                                                                                                                                                          |
 | `/hyperframes-creative`  | Non-animation creative direction — `frame.md` / `design.md`, palettes, typography, narration, beat planning, audio-reactive visuals, composition patterns.                                                                                                                                                                                                                                                                                                                           |
 | `/media-use`             | The media OS (a host app's own music and sound-effect tools come first for those) — resolve any media need (BGM, SFX, image, icon, logo, voice, color grade, LUT) into a frozen local file or paste-ready block + ledger record, generate via TTS/music/image models when the catalog misses, transcribe, caption, remove backgrounds, and reuse assets across projects. One shared audio engine + manifest tracking.                                                                |
-| `/hyperframes-cli`       | CLI dev loop — `init`, `lint`, `check`, `snapshot`, `preview`, `render`, `publish`, `doctor`, plus HeyGen-hosted cloud rendering (`cloud render`) and AWS Lambda rendering (`lambda deploy / render / progress`).                                                                                                                                                                                                                                                                    |
+| `/hyperframes-cli`       | CLI dev loop — `init`, `lint`, `check`, `snapshot`, `preview`, `render`, `publish`, `doctor`, plus HeyGen-hosted cloud rendering (`cloud render`, an upstream HeyGen service not operated by Clapova Engine) and AWS Lambda rendering (`lambda deploy / render / progress`).                                                                                                                                                                                                                                                                    |
 | `/hyperframes-audio`     | Mix the audio already placed in a composition — voiceover carve (dip a music bed only in the bands the voice occupies, static or dynamic, level match included), the effect chain (EQ, compressor, limiter, gate, saturation, delay, reverb, chorus, phaser, bitcrush), automation envelopes on volume or any effect parameter, and submix buses (`<hf-audio-group>`) carrying one chain, fader and automation clock for several tracks at once. Sourcing the audio is `/media-use`. |
 | `/hyperframes-registry`  | Search, install and wire registry blocks and components into compositions via `hyperframes catalog` / `hyperframes add`. Load before hand-building any named look, effect, treatment or transition. Authoring a new block or component to contribute upstream.                                                                                                                                                                                                                       |
 | `/figma`                 | Import Figma assets, tokens, components, and storyboard sections → reconstructed motion (frames read as states, not slides) (REST/CLI) plus Motion animations (MCP) and shaders (MCP source / native export) into a composition.                                                                                                                                                                                                                                                     |
@@ -330,7 +332,8 @@ Full documentation: [hyperframes.heygen.com/introduction](https://hyperframes.he
 HyperFrames is used in production at [HeyGen](https://www.heygen.com), with community examples from teams like [tldraw](https://tldraw.com), [TanStack](https://tanstack.com), and others in [ADOPTERS.md](ADOPTERS.md). Open a PR if your team is using HyperFrames.
 
 - Questions and ideas: [Discord](https://discord.gg/EbK98HBPdk)
-- Bugs and feature requests: [GitHub Issues](https://github.com/heygen-com/hyperframes/issues)
+- Bugs specific to Clapova Engine: [GitHub Issues](https://github.com/ohvignas/clapova-engine/issues)
+- Bugs and feature requests for upstream HyperFrames: [GitHub Issues](https://github.com/heygen-com/hyperframes/issues)
 - User research: [Book a casual 30-minute conversation with the HyperFrames team](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2cSpKoDgmcmRrgekrnrgqmvPT8W6F2Zg6e7MY7IJqaZKwpn_I0NdTHkN390iguMepE_NVg8ezb?gv=true) — no preparation or sales pitch
 - Security reports: [SECURITY.md](SECURITY.md)
 - Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
