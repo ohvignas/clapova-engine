@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# Local patches to upstream packages
-
-None. `packages/clapova-fly` only imports the public `@hyperframes/producer/distributed` API.
-=======
 # Patchs locaux et suivi de l'amont
 
 Clapova Engine est un fork de [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes) (Apache 2.0).
@@ -30,4 +25,4 @@ Remote : `git remote add upstream https://github.com/heygen-com/hyperframes`.
 ## Paquets Clapova (hors patchs amont)
 
 - `packages/clapova-render` (`@clapova/render`) : API worker `renderTimeline` / `previewFrames` / `checkComposition` au-dessus de `producer` et `lint`. Aucun fichier de `core/engine/producer` modifié. Le test de contrat `src/engine.contract.test.ts` vérifie les exports utilisés.
->>>>>>> origin/main
+- `packages/clapova-fly` : adaptateur de rendu distribué Fly. Importe seulement l'API publique `@hyperframes/producer/distributed`, aucun patch amont.
