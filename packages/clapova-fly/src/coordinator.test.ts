@@ -89,7 +89,13 @@ describe("renderOnFly", () => {
     prim.plan = async (...a) => ((planned = true), plan(...a));
     const res = await renderOnFly(
       { ...base(join(root, "o.mp4")), queue: { backlog: 1, oldestWaitMs: 0, runningMachines: 0 } },
-      { primitives: prim, store, launcher: localLauncher({}), guards: DEFAULT_GUARDS, packPlan: async (_d, t) => writeFileSync(t, "tar") },
+      {
+        primitives: prim,
+        store,
+        launcher: localLauncher({}),
+        guards: DEFAULT_GUARDS,
+        packPlan: async (_d, t) => writeFileSync(t, "tar"),
+      },
     );
     expect(res.status).toBe("skipped");
     expect(planned).toBe(false);
@@ -100,10 +106,20 @@ describe("renderOnFly", () => {
     const prim = primitives(5);
     const out = join(root, "o.mp4");
     const res = await renderOnFly(base(out), {
-      primitives: prim, store, launcher: localLauncher({ calls }), guards: DEFAULT_GUARDS,
-      packPlan: async (_d, t) => writeFileSync(t, "tar"), sleep: noSleep,
+      primitives: prim,
+      store,
+      launcher: localLauncher({ calls }),
+      guards: DEFAULT_GUARDS,
+      packPlan: async (_d, t) => writeFileSync(t, "tar"),
+      sleep: noSleep,
     });
-    expect(res).toMatchObject({ status: "done", chunkCount: 5, machinesUsed: 3, rounds: 1, resumedChunks: 0 });
+    expect(res).toMatchObject({
+      status: "done",
+      chunkCount: 5,
+      machinesUsed: 3,
+      rounds: 1,
+      resumedChunks: 0,
+    });
     expect(calls).toHaveLength(3);
     expect(calls.flatMap((c) => c.chunkIndices).sort()).toEqual([0, 1, 2, 3, 4]);
     expect(readFileSync(out, "utf-8")).toBe("c0|c1|c2|c3|c4");
@@ -118,8 +134,14 @@ describe("renderOnFly", () => {
     const calls: ChunkJob[] = [];
     await renderOnFly(
       { ...base(join(root, "o.mp4")), queue: { ...queue, runningMachines: 2 } },
-      { primitives: primitives(6), store, launcher: localLauncher({ calls }), guards: DEFAULT_GUARDS,
-        packPlan: async (_d, t) => writeFileSync(t, "tar"), sleep: noSleep },
+      {
+        primitives: primitives(6),
+        store,
+        launcher: localLauncher({ calls }),
+        guards: DEFAULT_GUARDS,
+        packPlan: async (_d, t) => writeFileSync(t, "tar"),
+        sleep: noSleep,
+      },
     );
     expect(calls).toHaveLength(1);
   });
@@ -127,8 +149,12 @@ describe("renderOnFly", () => {
   it("retries only the failed chunks in a second round", async () => {
     const calls: ChunkJob[] = [];
     const res = await renderOnFly(base(join(root, "o.mp4")), {
-      primitives: primitives(4), store, launcher: localLauncher({ failOnce: new Set([2]), calls }),
-      guards: DEFAULT_GUARDS, packPlan: async (_d, t) => writeFileSync(t, "tar"), sleep: noSleep,
+      primitives: primitives(4),
+      store,
+      launcher: localLauncher({ failOnce: new Set([2]), calls }),
+      guards: DEFAULT_GUARDS,
+      packPlan: async (_d, t) => writeFileSync(t, "tar"),
+      sleep: noSleep,
     });
     expect(res).toMatchObject({ status: "done", rounds: 2 });
     const round2 = calls.slice(-1)[0]!;
@@ -138,8 +164,13 @@ describe("renderOnFly", () => {
   it("fails with a resumable error, then a rerun resumes from the markers", async () => {
     const out = join(root, "o.mp4");
     const deps = (launcher: MachineLauncher) => ({
-      primitives: primitives(4), store, launcher, guards: DEFAULT_GUARDS,
-      packPlan: async (_d: string, t: string) => writeFileSync(t, "tar"), sleep: noSleep, cleanup: undefined,
+      primitives: primitives(4),
+      store,
+      launcher,
+      guards: DEFAULT_GUARDS,
+      packPlan: async (_d: string, t: string) => writeFileSync(t, "tar"),
+      sleep: noSleep,
+      cleanup: undefined,
     });
     const alwaysFailChunk3: MachineLauncher = {
       async run(job) {
@@ -149,7 +180,9 @@ describe("renderOnFly", () => {
         return { ok: false, error: "oom" };
       },
     };
-    const err = await renderOnFly({ ...base(out), maxAttempts: 2 }, deps(alwaysFailChunk3)).catch((e) => e);
+    const err = await renderOnFly({ ...base(out), maxAttempts: 2 }, deps(alwaysFailChunk3)).catch(
+      (e) => e,
+    );
     expect(err).toBeInstanceOf(FlyRenderError);
     expect(err.missingChunks).toEqual([3]);
     expect(existsSync(out)).toBe(false);
@@ -173,8 +206,12 @@ describe("renderOnFly", () => {
       },
     };
     const err = await renderOnFly(base(out), {
-      primitives: primitives(3), store, launcher: corrupting, guards: DEFAULT_GUARDS,
-      packPlan: async (_d, t) => writeFileSync(t, "tar"), sleep: noSleep,
+      primitives: primitives(3),
+      store,
+      launcher: corrupting,
+      guards: DEFAULT_GUARDS,
+      packPlan: async (_d, t) => writeFileSync(t, "tar"),
+      sleep: noSleep,
     }).catch((e) => e);
     expect(err).toBeInstanceOf(FlyRenderError);
     expect(err.missingChunks).toEqual([1]);
@@ -194,8 +231,21 @@ describe("plan stability", () => {
       };
       try {
         await renderOnFly(
-          { projectDir: "p", config: { fps: 30, format: "mp4" } as any, queue: { ...queue, runningMachines }, backoffMs: 0, maxAttempts: 1 } as any,
-          { store, guards: DEFAULT_GUARDS, primitives: p, launcher: { run: async () => ({ ok: false }) }, sleep: noSleep, tmpRoot: root } as any,
+          {
+            projectDir: "p",
+            config: { fps: 30, format: "mp4" } as any,
+            queue: { ...queue, runningMachines },
+            backoffMs: 0,
+            maxAttempts: 1,
+          } as any,
+          {
+            store,
+            guards: DEFAULT_GUARDS,
+            primitives: p,
+            launcher: { run: async () => ({ ok: false }) },
+            sleep: noSleep,
+            tmpRoot: root,
+          } as any,
         );
       } catch {}
     }

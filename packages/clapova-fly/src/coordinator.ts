@@ -105,7 +105,8 @@ export async function renderOnFly(
   const work = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), "clapova-fly-coord-"));
   const hash = deps.hashFile ?? sha256File;
   const pack =
-    deps.packPlan ?? (async (d: string, t: string) => (await import("./archive.js")).tarDirectory(d, t));
+    deps.packPlan ??
+    (async (d: string, t: string) => (await import("./archive.js")).tarDirectory(d, t));
   const store = deps.store;
 
   try {
@@ -207,9 +208,15 @@ export async function renderOnFly(
 
     // 5. Assemble and publish.
     const audioPath = deps.primitives.resolveAudioPath(planDir);
-    const result = await deps.primitives.assemble(planDir, chunkPaths, audioPath, input.outputPath, {
-      cfr: input.cfr === true,
-    });
+    const result = await deps.primitives.assemble(
+      planDir,
+      chunkPaths,
+      audioPath,
+      input.outputPath,
+      {
+        cfr: input.cfr === true,
+      },
+    );
 
     if (input.cleanup !== false) {
       const removals = [keys.plan(planHash)];

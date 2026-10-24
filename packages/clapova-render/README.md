@@ -7,19 +7,29 @@ It replaces `spawn(HF_BIN, ["render", ...])`, the stdout progress regex and `kil
 ## API
 
 ```ts
-import { renderTimeline, previewFrames, checkComposition, isClapovaRenderError } from "@clapova/render";
+import {
+  renderTimeline,
+  previewFrames,
+  checkComposition,
+  isClapovaRenderError,
+} from "@clapova/render";
 
-const check = await checkComposition({ projectDir, clipIds });   // lint (+ optional preflight)
-if (check.blocking) return reportToAgent(check.issues);           // <= 20 issues, errors first
+const check = await checkComposition({ projectDir, clipIds }); // lint (+ optional preflight)
+if (check.blocking) return reportToAgent(check.issues); // <= 20 issues, errors first
 
 const ac = new AbortController();
 const result = await renderTimeline({
-  projectDir, outputPath, fps: 30, quality: "standard", clipIds,
-  signal: ac.signal, timeoutMs: 20 * 60_000,
-  onProgress: ({ percent, stage, done, total }) => heartbeat(percent),  // monotonic 0..100
+  projectDir,
+  outputPath,
+  fps: 30,
+  quality: "standard",
+  clipIds,
+  signal: ac.signal,
+  timeoutMs: 20 * 60_000,
+  onProgress: ({ percent, stage, done, total }) => heartbeat(percent), // monotonic 0..100
 });
 
-const frames = await previewFrames({ projectDir, times: [0, 2.5, 7], outDir });  // <= 12 PNG, 540p
+const frames = await previewFrames({ projectDir, times: [0, 2.5, 7], outDir }); // <= 12 PNG, 540p
 ```
 
 ## Errors
@@ -28,17 +38,17 @@ Every failure is a `ClapovaRenderError` (`code`, `owner: "user" | "system"`, `re
 `stage`, `issues[]`). `JSON.stringify(err)` gives the payload to store in Convex.
 Each issue carries `clipId`, `elementId`, `src`, `expected`, `detected`, `hint` when known.
 
-| code | owner | retryable | source |
-|---|---|---|---|
-| `ASSET_MEDIA_TYPE_MISMATCH` | user | no | producer `AssetMediaTypeMismatchError`; `details` (feat/erreur-media-detaillee) gives clipId/src |
-| `NOT_MEDIA_PAYLOAD` | user | no | engine `NotMediaPayloadError` (fingerprints only) |
-| `RENDER_QUALITY_BLOCKED` | user | no | producer `RenderQualityError` (one issue per warning code) |
-| `RENDER_CANCELLED` | system | no | caller abort |
-| `RENDER_TIMEOUT` | system | yes | `timeoutMs` exceeded |
-| `INVALID_INPUT` | user | no | bad options, rejected before the engine starts |
-| `PREVIEW_EXTRACT_FAILED` | system | yes | ffmpeg frame extraction |
-| any typed engine code | as thrown | as thrown | errors carrying `code` + `owner` + `retryable` |
-| `RENDER_FAILED` | system | yes | anything else |
+| code                        | owner     | retryable | source                                                                                           |
+| --------------------------- | --------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `ASSET_MEDIA_TYPE_MISMATCH` | user      | no        | producer `AssetMediaTypeMismatchError`; `details` (feat/erreur-media-detaillee) gives clipId/src |
+| `NOT_MEDIA_PAYLOAD`         | user      | no        | engine `NotMediaPayloadError` (fingerprints only)                                                |
+| `RENDER_QUALITY_BLOCKED`    | user      | no        | producer `RenderQualityError` (one issue per warning code)                                       |
+| `RENDER_CANCELLED`          | system    | no        | caller abort                                                                                     |
+| `RENDER_TIMEOUT`            | system    | yes       | `timeoutMs` exceeded                                                                             |
+| `INVALID_INPUT`             | user      | no        | bad options, rejected before the engine starts                                                   |
+| `PREVIEW_EXTRACT_FAILED`    | system    | yes       | ffmpeg frame extraction                                                                          |
+| any typed engine code       | as thrown | as thrown | errors carrying `code` + `owner` + `retryable`                                                   |
+| `RENDER_FAILED`             | system    | yes       | anything else                                                                                    |
 
 Engine errors are recognized by shape (`code` / `name`), not class identity.
 `clipIds` maps element ids written by Clapova's composer (`c-<clipId>`, `-l`, `-k`, `-km`)

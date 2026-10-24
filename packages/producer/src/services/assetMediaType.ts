@@ -94,9 +94,10 @@ export class AssetMediaTypeMismatchError extends Error {
     );
     const hidden = this.details.length - shown.length;
     if (hidden > 0) lines.push(`- … and ${hidden} more`);
-    return [`${this.details.length} asset(s) do not match their media element type:`, ...lines].join(
-      "\n",
-    );
+    return [
+      `${this.details.length} asset(s) do not match their media element type:`,
+      ...lines,
+    ].join("\n");
   }
 }
 

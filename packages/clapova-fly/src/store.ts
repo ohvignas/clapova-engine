@@ -122,7 +122,9 @@ export async function createS3Store(opts: S3StoreOptions): Promise<ObjectStore> 
   const isMissing = (e: unknown) => {
     const err = e as { name?: string; $metadata?: { httpStatusCode?: number } };
     return (
-      err?.name === "NotFound" || err?.name === "NoSuchKey" || err?.$metadata?.httpStatusCode === 404
+      err?.name === "NotFound" ||
+      err?.name === "NoSuchKey" ||
+      err?.$metadata?.httpStatusCode === 404
     );
   };
   return {

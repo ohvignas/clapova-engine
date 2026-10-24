@@ -15,10 +15,14 @@ describe("readGuardsFromEnv", () => {
 describe("decideMachineBudget", () => {
   const g = DEFAULT_GUARDS;
   it("refuses when the queue is short", () => {
-    expect(decideMachineBudget({ backlog: 2, oldestWaitMs: 999_999, runningMachines: 0 }, g).allowed).toBe(false);
+    expect(
+      decideMachineBudget({ backlog: 2, oldestWaitMs: 999_999, runningMachines: 0 }, g).allowed,
+    ).toBe(false);
   });
   it("refuses when the oldest job has not waited long enough", () => {
-    expect(decideMachineBudget({ backlog: 5, oldestWaitMs: 60_000, runningMachines: 0 }, g).allowed).toBe(false);
+    expect(
+      decideMachineBudget({ backlog: 5, oldestWaitMs: 60_000, runningMachines: 0 }, g).allowed,
+    ).toBe(false);
   });
   it("allows the remaining room when saturated", () => {
     const b = decideMachineBudget({ backlog: 3, oldestWaitMs: 180_000, runningMachines: 1 }, g);
@@ -29,7 +33,17 @@ describe("decideMachineBudget", () => {
     expect(b).toMatchObject({ allowed: false, machines: 0 });
   });
   it("lets an explicit srv2Saturated flag decide", () => {
-    expect(decideMachineBudget({ backlog: 0, oldestWaitMs: 0, runningMachines: 0, srv2Saturated: true }, g).allowed).toBe(true);
-    expect(decideMachineBudget({ backlog: 9, oldestWaitMs: 999_999, runningMachines: 0, srv2Saturated: false }, g).allowed).toBe(false);
+    expect(
+      decideMachineBudget(
+        { backlog: 0, oldestWaitMs: 0, runningMachines: 0, srv2Saturated: true },
+        g,
+      ).allowed,
+    ).toBe(true);
+    expect(
+      decideMachineBudget(
+        { backlog: 9, oldestWaitMs: 999_999, runningMachines: 0, srv2Saturated: false },
+        g,
+      ).allowed,
+    ).toBe(false);
   });
 });

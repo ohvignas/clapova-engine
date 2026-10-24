@@ -10,7 +10,12 @@
 export const GSAP_SRC = "https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js";
 
 const esc = (s) =>
-  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 const num = (n) => Number(Number(n).toFixed(3));
 const domId = (id) => `c-${id.replace(/[^A-Za-z0-9_-]/g, "_")}`;
 const layerId = (id) => `${domId(id)}-l`;
@@ -64,13 +69,17 @@ export function composeHtml(spec) {
   const { width, height } = spec;
   const nodes = [];
   const tweens = [];
-  const speech = spec.clips.filter((c) => c.role === "voix").map((c) => [c.start, c.start + c.duration]);
+  const speech = spec.clips
+    .filter((c) => c.role === "voix")
+    .map((c) => [c.start, c.start + c.duration]);
   const tracks = new Map();
   for (const c of spec.clips) tracks.set(c.track, [...(tracks.get(c.track) ?? []), c]);
 
   for (const c of spec.clips) {
     const lane = c.track;
-    const prev = (tracks.get(lane) ?? []).find((o) => o !== c && Math.abs(o.start + o.duration - c.start) < 0.04);
+    const prev = (tracks.get(lane) ?? []).find(
+      (o) => o !== c && Math.abs(o.start + o.duration - c.start) < 0.04,
+    );
     const tIn = c.transitionIn && prev ? c.transitionIn : null;
     // Un fondu ou une glissade dessine le clip entrant en avance sur le précédent.
     const handle = tIn ? tIn.duration : 0;
@@ -81,10 +90,16 @@ export function composeHtml(spec) {
 
     if (c.kind === "audio") {
       const points = volumeLane({
-        duration: c.duration, volume, speech: c.role === "musique" ? speech.map(([s, e]) => [s - c.start, e - c.start]) : [],
-        duck: c.role === "musique" && spec.duck ? spec.duck : null, fadeIn: c.fadeIn ?? 0, fadeOut: c.fadeOut ?? 0,
+        duration: c.duration,
+        volume,
+        speech: c.role === "musique" ? speech.map(([s, e]) => [s - c.start, e - c.start]) : [],
+        duck: c.role === "musique" && spec.duck ? spec.duck : null,
+        fadeIn: c.fadeIn ?? 0,
+        fadeOut: c.fadeOut ?? 0,
       });
-      nodes.push(`<audio ${timing(c, lane)} src="${esc(c.src)}" data-media-start="${num(c.trimIn ?? 0)}" data-volume="${volume}"${automation(points)}></audio>`);
+      nodes.push(
+        `<audio ${timing(c, lane)} src="${esc(c.src)}" data-media-start="${num(c.trimIn ?? 0)}" data-volume="${volume}"${automation(points)}></audio>`,
+      );
       continue;
     }
 
@@ -98,26 +113,48 @@ export function composeHtml(spec) {
       const fontSize = Math.round(c.fontSize ?? height / 18);
       const top = Math.max(0, Math.round((c.y ?? 0.5) * height - fontSize * 0.6));
       const body = c.anim
-        ? [...c.text].map((ch, i) => ch === "\n" ? "<br>" : `<span class="u u${i}" style="display:inline-block">${ch === " " ? "&nbsp;" : esc(ch)}</span>`).join("")
+        ? [...c.text]
+            .map((ch, i) =>
+              ch === "\n"
+                ? "<br>"
+                : `<span class="u u${i}" style="display:inline-block">${ch === " " ? "&nbsp;" : esc(ch)}</span>`,
+            )
+            .join("")
         : esc(c.text);
       inner = `<div class="clip text" ${timing(c, lane, start, duration)} style="padding-top:${top}px;justify-content:center;text-align:center;font-size:${fontSize}px;font-weight:${c.fontWeight ?? 700};color:${c.color ?? "#ffffff"}">${body}</div>`;
       if (c.anim) {
-        tweens.push(`tl.fromTo(${JSON.stringify(`#${domId(c.id)} .u`)},{opacity:0,y:${Math.round(fontSize * 0.6)}},{opacity:1,y:0,duration:0.5,stagger:0.04,ease:"power3.out",immediateRender:false},${num(c.start)});`);
+        tweens.push(
+          `tl.fromTo(${JSON.stringify(`#${domId(c.id)} .u`)},{opacity:0,y:${Math.round(fontSize * 0.6)}},{opacity:1,y:0,duration:0.5,stagger:0.04,ease:"power3.out",immediateRender:false},${num(c.start)});`,
+        );
       }
     }
-    nodes.push(`<div id="${layerId(c.id)}" class="layer" style="z-index:${z}"><div class="mp"><div class="tr"><div class="cam">${inner}</div></div></div></div>`);
+    nodes.push(
+      `<div id="${layerId(c.id)}" class="layer" style="z-index:${z}"><div class="mp"><div class="tr"><div class="cam">${inner}</div></div></div></div>`,
+    );
 
     const sel = JSON.stringify(`#${domId(c.id)}`);
-    if (c.fadeIn > 0) tweens.push(`tl.fromTo(${sel},{opacity:0},{opacity:1,duration:${num(c.fadeIn)},ease:"none",immediateRender:false},${num(c.start)});`);
-    if (c.fadeOut > 0) tweens.push(`tl.fromTo(${sel},{opacity:1},{opacity:0,duration:${num(c.fadeOut)},ease:"none",immediateRender:false},${num(c.start + c.duration - c.fadeOut)});`);
+    if (c.fadeIn > 0)
+      tweens.push(
+        `tl.fromTo(${sel},{opacity:0},{opacity:1,duration:${num(c.fadeIn)},ease:"none",immediateRender:false},${num(c.start)});`,
+      );
+    if (c.fadeOut > 0)
+      tweens.push(
+        `tl.fromTo(${sel},{opacity:1},{opacity:0,duration:${num(c.fadeOut)},ease:"none",immediateRender:false},${num(c.start + c.duration - c.fadeOut)});`,
+      );
     if (tIn) {
       const trIn = JSON.stringify(`#${layerId(c.id)} .tr`);
       const trOut = JSON.stringify(`#${layerId(prev.id)} .tr`);
       if (tIn.preset === "fondu") {
-        tweens.push(`tl.fromTo(${trIn},{opacity:0},{opacity:1,duration:${num(handle)},ease:"none",immediateRender:false},${num(start)});`);
+        tweens.push(
+          `tl.fromTo(${trIn},{opacity:0},{opacity:1,duration:${num(handle)},ease:"none",immediateRender:false},${num(start)});`,
+        );
       } else if (tIn.preset === "glisse") {
-        tweens.push(`tl.fromTo(${trIn},{xPercent:100},{xPercent:0,duration:${num(handle)},ease:"power2.inOut",immediateRender:false},${num(start)});`);
-        tweens.push(`tl.fromTo(${trOut},{xPercent:0},{xPercent:-30,duration:${num(handle)},ease:"power2.inOut",immediateRender:false},${num(start)});`);
+        tweens.push(
+          `tl.fromTo(${trIn},{xPercent:100},{xPercent:0,duration:${num(handle)},ease:"power2.inOut",immediateRender:false},${num(start)});`,
+        );
+        tweens.push(
+          `tl.fromTo(${trOut},{xPercent:0},{xPercent:-30,duration:${num(handle)},ease:"power2.inOut",immediateRender:false},${num(start)});`,
+        );
       } else throw new Error(`transition inconnue : ${tIn.preset}`);
     }
   }

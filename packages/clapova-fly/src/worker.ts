@@ -41,7 +41,8 @@ async function readValidMarker(
 export async function runChunkJob(job: ChunkJob, deps: WorkerDeps): Promise<ChunkDoneMarker[]> {
   const work = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), "clapova-fly-chunk-"));
   const unpack =
-    deps.unpackPlan ?? (async (t: string, d: string) => (await import("./archive.js")).untarDirectory(t, d));
+    deps.unpackPlan ??
+    (async (t: string, d: string) => (await import("./archive.js")).untarDirectory(t, d));
   const hash = deps.hashFile ?? sha256File;
   const ext = FORMAT_EXT[job.format];
   try {

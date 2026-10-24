@@ -7,7 +7,12 @@ import {
   type ProducerApi,
   loadProducer,
 } from "./engine.js";
-import { ClapovaRenderError, INVALID_INPUT, normalizeEngineError, RENDER_FAILED } from "./errors.js";
+import {
+  ClapovaRenderError,
+  INVALID_INPUT,
+  normalizeEngineError,
+  RENDER_FAILED,
+} from "./errors.js";
 
 export interface RenderProgress {
   /** 0..100, never decreases within one render. */
@@ -132,12 +137,17 @@ export function createMonotonicProgress(
   };
 }
 
-export async function renderTimeline(options: RenderTimelineOptions): Promise<RenderTimelineResult> {
+export async function renderTimeline(
+  options: RenderTimelineOptions,
+): Promise<RenderTimelineResult> {
   validate(options);
   const resolveClipId = createClipIdResolver(options.clipIds);
   const signal = engineSignal(options.signal, options.timeoutMs);
   if (signal?.aborted) {
-    throw normalizeEngineError({ name: "RenderCancelledError", reason: "aborted" }, { stage: "input" });
+    throw normalizeEngineError(
+      { name: "RenderCancelledError", reason: "aborted" },
+      { stage: "input" },
+    );
   }
 
   const producer = options.producer ?? (await loadProducer());

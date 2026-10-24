@@ -18,8 +18,8 @@ Remote : `git remote add upstream https://github.com/heygen-com/hyperframes`.
 
 ## Liste des patchs locaux
 
-| Fichier(s) | Ticket « patch amont » | Raison | PR amont | Statut |
-|---|---|---|---|---|
+| Fichier(s)                                                                                                    | Ticket « patch amont »             | Raison                                                                                                                                                                                                                                                                      | PR amont   | Statut         |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------- |
 | `packages/producer/src/services/assetMediaType.ts`, `packages/producer/src/services/htmlCompiler.ts` (+ test) | Tâche 1.2 : erreur média détaillée | `AssetMediaTypeMismatchError` porte, hors sérialisation (propriété non énumérable `details`), l'id d'élément, le `src` écrit, le type attendu et le type détecté. `describeForAuthor()` renvoie un message actionnable pour l'agent. Message, télémétrie et JSON inchangés. | à proposer | candidat amont |
 
 ## Paquets Clapova (hors patchs amont)
@@ -29,8 +29,8 @@ Remote : `git remote add upstream https://github.com/heygen-com/hyperframes`.
 
 ## Suivi des fusions amont
 
-| Date | Version amont | Ce qui arrive | Conflits |
-|---|---|---|---|
+| Date       | Version amont              | Ce qui arrive                                                                                                                                                                                                                                                                                                                                                                                                             | Conflits                                                                                                                                                                                                   |
+| ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-10-24 | v0.8.193 (depuis v0.8.177) | `cli/src/utils/craftAudit.ts` (first_frame_empty, text_below_floor, line_unread, dead_stretch, film_silent) dans `hyperframes check` ; `cli/src/commands/snapshotReview.ts` (`snapshot --review`, planches de revue) ; `snapshot --against` ; `producer/.../audioTruePeak.ts` ; `core/src/mediaTiming.ts` et `parsers/src/mediaTiming.ts` ; correctifs engine/producer (Chrome épinglé pour check/snapshot/render, etc.). | `README.md`, `skills-manifest.json` (version amont puis manifeste régénéré pour le patch télémétrie media-use), `package.json` (`test:scripts` amont + tests `scripts/clapova/*`). Patch Tâche 1.2 intact. |
 
 ### Code amont à ne pas activer : `packages/cli/src/audio/read/stems.ts`

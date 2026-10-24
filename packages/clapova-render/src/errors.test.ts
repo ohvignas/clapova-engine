@@ -15,7 +15,13 @@ function mediaMismatch(details?: unknown[]) {
   Object.defineProperty(err, "details", {
     enumerable: false,
     value: details ?? [
-      { expected: "video", detected: "image", elementFingerprint: "abcd", elementId: "c-clip7", src: "media/photo.mp4" },
+      {
+        expected: "video",
+        detected: "image",
+        elementFingerprint: "abcd",
+        elementId: "c-clip7",
+        src: "media/photo.mp4",
+      },
     ],
   });
   err.describeForAuthor = () => '1 asset(s) do not match: element "c-clip7"';
@@ -56,8 +62,14 @@ describe("normalizeEngineError", () => {
   });
 
   it("maps cancellation, quality, typed and unknown errors", () => {
-    const cancelled = Object.assign(new Error("render_cancelled"), { name: "RenderCancelledError", reason: "user_cancelled" });
-    expect(normalizeEngineError(cancelled)).toMatchObject({ code: "RENDER_CANCELLED", retryable: false });
+    const cancelled = Object.assign(new Error("render_cancelled"), {
+      name: "RenderCancelledError",
+      reason: "user_cancelled",
+    });
+    expect(normalizeEngineError(cancelled)).toMatchObject({
+      code: "RENDER_CANCELLED",
+      retryable: false,
+    });
 
     const quality = Object.assign(new Error("blocked"), {
       name: "RenderQualityError",
@@ -67,19 +79,44 @@ describe("normalizeEngineError", () => {
     expect(q.code).toBe("RENDER_QUALITY_BLOCKED");
     expect(q.issues[0]?.code).toBe("sub_timeline_script_failure");
 
-    const typed = Object.assign(new Error("encoder died"), { code: "ENCODER_INTERRUPTED", owner: "system", retryable: true });
-    expect(normalizeEngineError(typed)).toMatchObject({ code: "ENCODER_INTERRUPTED", owner: "system", retryable: true });
+    const typed = Object.assign(new Error("encoder died"), {
+      code: "ENCODER_INTERRUPTED",
+      owner: "system",
+      retryable: true,
+    });
+    expect(normalizeEngineError(typed)).toMatchObject({
+      code: "ENCODER_INTERRUPTED",
+      owner: "system",
+      retryable: true,
+    });
 
-    const notMedia = Object.assign(new Error("text doc"), { code: "NOT_MEDIA_PAYLOAD", owner: "user", retryable: false, elementFingerprints: ["f1", "f2"] });
+    const notMedia = Object.assign(new Error("text doc"), {
+      code: "NOT_MEDIA_PAYLOAD",
+      owner: "user",
+      retryable: false,
+      elementFingerprints: ["f1", "f2"],
+    });
     expect(normalizeEngineError(notMedia).issues).toHaveLength(2);
 
-    expect(normalizeEngineError(new Error("boom"))).toMatchObject({ code: "RENDER_FAILED", owner: "system", retryable: true });
-    expect(normalizeEngineError("plain")).toMatchObject({ code: "RENDER_FAILED", message: "plain" });
+    expect(normalizeEngineError(new Error("boom"))).toMatchObject({
+      code: "RENDER_FAILED",
+      owner: "system",
+      retryable: true,
+    });
+    expect(normalizeEngineError("plain")).toMatchObject({
+      code: "RENDER_FAILED",
+      message: "plain",
+    });
   });
 
   it("caps issues and message length", () => {
     const err = mediaMismatch(
-      Array.from({ length: 50 }, (_, i) => ({ expected: "audio", detected: "unknown", elementId: `c-${i}`, src: "x".repeat(1000) })),
+      Array.from({ length: 50 }, (_, i) => ({
+        expected: "audio",
+        detected: "unknown",
+        elementId: `c-${i}`,
+        src: "x".repeat(1000),
+      })),
     );
     const out = normalizeEngineError(err);
     expect(out.issues).toHaveLength(20);

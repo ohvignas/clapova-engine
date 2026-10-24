@@ -21,12 +21,16 @@ export async function build(ids = []) {
     const dir = join(BUILD_DIR, spec.id);
     await mkdir(join(dir, "assets"), { recursive: true });
     await writeFile(join(dir, "index.html"), composeHtml(spec));
-    const used = new Set(spec.clips.filter((c) => c.src).map((c) => c.src.replace(/^assets\//, "")));
+    const used = new Set(
+      spec.clips.filter((c) => c.src).map((c) => c.src.replace(/^assets\//, "")),
+    );
     for (const name of used) await cp(join(media, name), join(dir, "assets", name));
   }
   return wanted.map((c) => c.id);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  build(process.argv.slice(2)).then((ids) => console.log(`${ids.length} compositions dans ${BUILD_DIR}`));
+  build(process.argv.slice(2)).then((ids) =>
+    console.log(`${ids.length} compositions dans ${BUILD_DIR}`),
+  );
 }

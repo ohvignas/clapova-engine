@@ -92,9 +92,7 @@ let lintPromise: Promise<LintApi> | null = null;
 
 /** Lazy-load the real producer. Kept dynamic so importing the SDK never boots Chrome tooling. */
 export function loadProducer(): Promise<ProducerApi> {
-  producerPromise ??= import(PRODUCER_MODULE).then(
-    (mod) => mod as unknown as ProducerApi,
-  );
+  producerPromise ??= import(PRODUCER_MODULE).then((mod) => mod as unknown as ProducerApi);
   return producerPromise;
 }
 

@@ -1,10 +1,15 @@
 import type { EngineRenderConfigInput, EngineRenderJob, ProducerApi } from "./engine.js";
 
-type Step = (job: EngineRenderJob, report: (p: number, code?: string) => void, signal?: AbortSignal) => Promise<void>;
+type Step = (
+  job: EngineRenderJob,
+  report: (p: number, code?: string) => void,
+  signal?: AbortSignal,
+) => Promise<void>;
 
 /** Minimal in-memory producer for unit tests. Not exported from the package entry. */
 export function fakeProducer(step: Step = async () => {}) {
-  const calls: Array<{ config: EngineRenderConfigInput; projectDir: string; outputPath: string }> = [];
+  const calls: Array<{ config: EngineRenderConfigInput; projectDir: string; outputPath: string }> =
+    [];
   let lastConfig: EngineRenderConfigInput | undefined;
   const api: ProducerApi = {
     createRenderJob(config) {
