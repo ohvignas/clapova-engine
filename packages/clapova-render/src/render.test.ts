@@ -122,7 +122,7 @@ describe("renderTimeline review fixes", () => {
   });
 
   it("maps an engine timeout abort to RENDER_TIMEOUT (retryable)", async () => {
-    const { api } = fakeProducer(async (_j, _r, signal) => {
+    const { api } = fakeProducer(async (_j, _r, _signal) => {
       await new Promise((r) => setTimeout(r, 30));
       throw Object.assign(new Error("render_cancelled"), { name: "RenderCancelledError", reason: "timeout" });
     });

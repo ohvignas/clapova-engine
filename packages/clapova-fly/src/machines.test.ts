@@ -31,7 +31,7 @@ describe("extractExitCode", () => {
 describe("FlyMachinesClient + launcher", () => {
   it("creates a one-shot machine, waits for exit, destroys it", async () => {
     let polls = 0;
-    const { fetchImpl, calls } = fakeFetch((method, url) => {
+    const { fetchImpl, calls } = fakeFetch((method, _url) => {
       if (method === "POST") return { status: 200, json: { id: "m1" } };
       if (method === "GET") {
         polls++;
