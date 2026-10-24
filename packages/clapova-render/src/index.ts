@@ -26,7 +26,19 @@ export {
   type CheckCompositionOptions,
   type CheckCompositionResult,
   type PreflightHook,
+  type CheckSectionSummary,
+  issuesFromCheckReport,
+  CHECK_FAILED,
 } from "./check.js";
+export {
+  reviewSheets,
+  REVIEW_FAILED,
+  type ReviewSheetsOptions,
+  type ReviewSheetsResult,
+  type ReviewStill,
+  type ReviewSeamSheet,
+} from "./review.js";
+export { runHyperframesCli, type CliRunner, type CliRunResult, type CliRunOptions } from "./cli.js";
 export {
   ClapovaRenderError,
   isClapovaRenderError,

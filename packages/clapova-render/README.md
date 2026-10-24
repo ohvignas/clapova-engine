@@ -68,3 +68,9 @@ back to timeline clip ids; without it a naming heuristic is used.
 
 `bun run build` (tsup to `dist/`), `bun run test` (vitest), `bun run typecheck`.
 `src/engine.contract.test.ts` fails if a producer/lint export this SDK relies on disappears upstream.
+
+## Contrôle complet et planches de revue
+
+- `checkComposition({ projectDir })` lance `hyperframes check --json` (lint, runtime, layout, motion, contraste, craft audit : `first_frame_empty`, `text_below_floor`, `line_unread`, `dead_stretch`, `film_silent`). `result.sections` donne les comptes par section. `mode: "lint"` garde le contrôle statique sans navigateur.
+- `reviewSheets({ projectDir, composition?, outputDir? })` lance `hyperframes snapshot --review --json` et renvoie les planches JPEG (beats, coutures, téléphone) et les images.
+- Test bout en bout (Chrome requis) : `CLAPOVA_E2E=1 bunx vitest run src/cli.e2e.test.ts`.

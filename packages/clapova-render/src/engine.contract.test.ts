@@ -37,4 +37,20 @@ describe("engine contract", () => {
     expect(src).toMatch(/elementId: string;\s*src: string;/);
     expect(src).toMatch(/describeForAuthor\(\): string/);
   });
+
+  it("cli check runs the craft audit and snapshot has --review", () => {
+    const pipeline = read("cli/src/utils/checkPipeline.ts");
+    expect(pipeline).toMatch(/\bcraft\b/);
+    const craft = read("cli/src/utils/craftAudit.ts");
+    for (const code of ["first_frame_empty", "text_below_floor", "film_silent"])
+      expect(craft).toContain(code);
+    expect(read("cli/src/commands/check.ts")).toMatch(/json: \{ type: "boolean"/);
+    const snapshot = read("cli/src/commands/snapshot.ts");
+    expect(snapshot).toMatch(/review: \{/);
+    expect(snapshot).toMatch(/composition: \{/);
+    expect(read("cli/src/commands/snapshotReview.ts")).toMatch(
+      /export async function writeReviewSheets/,
+    );
+    expect(read("cli/package.json")).toMatch(/"hyperframes": "\.\/bin\/hyperframes\.mjs"/);
+  });
 });

@@ -81,6 +81,7 @@
       "name": "@clapova/render",
       "version": "0.1.0",
       "dependencies": {
+        "@hyperframes/cli": "workspace:*",
         "@hyperframes/lint": "workspace:*",
         "@hyperframes/producer": "workspace:*",
       },
