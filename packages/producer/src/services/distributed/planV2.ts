@@ -19,7 +19,6 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
-  renameSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -27,7 +26,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { DISTRIBUTED_FPS, type DistributedFps, isDistributedFps } from "@hyperframes/core";
-import { createFrameLookupTable, type ExtractedFrames } from "@hyperframes/engine";
+import { createFrameLookupTable, type ExtractedFrames, renameWithRetry } from "@hyperframes/engine";
 import {
   readPlanRemoteFiles,
   planFileSha256,
@@ -55,6 +54,7 @@ import {
 } from "./planV2Publisher.js";
 import { PLAN_V2_INTEGRITY_UNRECOVERABLE, PlanV2IntegrityError } from "./planV2Errors.js";
 import { planV2BlobPath } from "./planV2Layout.js";
+import { chunkAudioSliceTarget } from "./chunkAudio.js";
 import { resolveRenderFpsConfig } from "../fileServer.js";
 import {
   isPlanAudioArtifactPath,
@@ -149,6 +149,7 @@ export interface PlanV2WithPublisherOptions {
   /** See {@link BuildLocalExecutionPlanOptions.remoteFiles}; needs a publisher with `referenceStoredBlob`. */
   readonly remoteFiles?: BuildLocalExecutionPlanOptions["remoteFiles"];
   readonly chunksCarryAudio?: boolean;
+  readonly deferAudio?: boolean;
 }
 
 export interface PlanV2MaterializationResult {
@@ -283,11 +284,14 @@ function resolveExtractedVideoOutputDir(planDir: string, videoId: string): strin
 function artifactTargets(
   path: string,
   videoDependencies: ReadonlyMap<string, readonly number[]> | null,
-  chunksCarryAudio: boolean,
+  chunkAudio: "none" | "whole" | "sliced",
 ): Pick<PlanV2Artifact, "chunks" | "assembler"> {
   if (isPlanAudioArtifactPath(path)) {
-    return chunksCarryAudio ? { chunks: "all", assembler: false } : { chunks: [], assembler: true };
+    if (chunkAudio === "none") return { chunks: [], assembler: true };
+    return { chunks: chunkAudio === "whole" ? "all" : [], assembler: false };
   }
+  const slice = chunkAudioSliceTarget(path);
+  if (slice !== null) return { chunks: slice === "all" ? "all" : [slice], assembler: false };
   if (path === "plan.json" || path === "meta/chunks.json" || path === "meta/encoder.json") {
     return { chunks: "all", assembler: true };
   }
@@ -498,7 +502,7 @@ function writeBlob(sourcePath: string, destinationPath: string): void {
   const temporaryPath = join(temporaryDir, "blob");
   try {
     copyFileSync(sourcePath, temporaryPath);
-    renameSync(temporaryPath, destinationPath);
+    renameWithRetry(temporaryPath, destinationPath);
   } finally {
     rmSync(temporaryDir, { recursive: true, force: true });
   }
@@ -583,10 +587,16 @@ function buildPlanV2Publication(
   validateExtractionCacheCompleteSentinels(executionPlanDir);
   const videoDependencyPlan = buildVideoChunkDependencies(executionPlanDir, dimensions);
   const encoder = readJsonFile(join(executionPlanDir, "meta", "encoder.json"), "meta/encoder.json");
-  const chunksCarryAudio = isRecord(encoder) && encoder.chunksCarryAudio === true;
-  for (const file of listFiles(executionPlanDir)) {
+  const files = listFiles(executionPlanDir);
+  const chunkAudio =
+    !isRecord(encoder) || encoder.chunksCarryAudio !== true
+      ? "none"
+      : files.some((file) => chunkAudioSliceTarget(file.path) !== null)
+        ? "sliced"
+        : "whole";
+  for (const file of files) {
     if (isExtractionCacheCompleteSentinelPath(file.path)) continue;
-    const targets = artifactTargets(file.path, videoDependencyPlan.dependencies, chunksCarryAudio);
+    const targets = artifactTargets(file.path, videoDependencyPlan.dependencies, chunkAudio);
     if (
       (file.path.startsWith("video-frames/") || file.path.startsWith("video-sources/")) &&
       targets.chunks !== "all" &&
@@ -610,7 +620,7 @@ function buildPlanV2Publication(
     if (!blobs.has(sha256)) storedBlobs.set(sha256, { sha256, sizeBytes });
     artifacts.push({
       ...remote,
-      ...artifactTargets(remote.path, videoDependencyPlan.dependencies, chunksCarryAudio),
+      ...artifactTargets(remote.path, videoDependencyPlan.dependencies, chunkAudio),
     });
   }
 
@@ -663,7 +673,7 @@ export function createPlanV2FromExecutionPlan(
       canonicalJsonStringify(publication.manifest),
       "utf-8",
     );
-    renameSync(tempDir, planV2Dir);
+    renameWithRetry(tempDir, planV2Dir);
     return resultFromManifest(planV2Dir, publication.manifest);
   } catch (error) {
     rmSync(tempDir, { recursive: true, force: true });
@@ -761,6 +771,8 @@ export async function planV2WithPublisher(
           ),
         ),
       chunksCarryAudio: options.chunksCarryAudio,
+      sliceChunkAudio: true,
+      deferAudio: options.deferAudio,
     });
     return await publishExecutionPlan(stagingRoot, publisher, { digests, log: config.logger });
   } catch (error) {
@@ -1059,7 +1071,7 @@ export function materializePlanV2Target(
       }),
       "utf-8",
     );
-    renameSync(tempDir, destinationDir);
+    renameWithRetry(tempDir, destinationDir);
   } catch (error) {
     rmSync(tempDir, { recursive: true, force: true });
     throw error;

@@ -98,6 +98,7 @@ import {
   CliRuntimeError,
   CliUsageError,
   consumeCommandResult,
+  outputWritten,
   registerRootExitCodeSanitizer,
   registerRootExitRequester,
   type CommandResult,
@@ -269,31 +270,32 @@ const UPDATE_CHECKS_ENABLED = process.env["HYPERFRAMES_FORK_UPDATE_CHECK"] === "
 if (
   UPDATE_CHECKS_ENABLED &&
   !isHelp &&
-  !hasJsonFlag &&
   command !== "upgrade" &&
   command !== "events" &&
   command !== "telemetry" &&
   command !== "skills" &&
   command !== "usage"
 ) {
-  // Report any completed auto-install from the previous run first, before
-  // kicking off the next check — so the user sees "updated to vX" once and
-  // we don't over-print.
-  import("./utils/autoUpdate.js").then((mod) => mod.reportCompletedUpdate()).catch(() => {});
+  if (!hasJsonFlag) {
+    // Report any completed auto-install from the previous run first, before
+    // kicking off the next check — so the user sees "updated to vX" once and
+    // we don't over-print.
+    import("./utils/autoUpdate.js").then((mod) => mod.reportCompletedUpdate()).catch(() => {});
 
-  import("./utils/updateCheck.js")
-    .then(async (mod) => {
-      _printUpdateNotice = mod.printUpdateNotice;
-      _printStalePinNotice = mod.printStalePinNotice;
-      const result = mod.cachedUpdateCheck();
-      if (result.updateAvailable) {
-        const auto = await import("./utils/autoUpdate.js").catch(() => null);
-        auto?.scheduleBackgroundInstall(result.latest, result.current);
-      }
-    })
-    .catch(() => {});
+    import("./utils/updateCheck.js")
+      .then(async (mod) => {
+        _printUpdateNotice = mod.printUpdateNotice;
+        _printStalePinNotice = mod.printStalePinNotice;
+        const result = mod.cachedUpdateCheck();
+        if (result.updateAvailable) {
+          const auto = await import("./utils/autoUpdate.js").catch(() => null);
+          auto?.scheduleBackgroundInstall(result.latest, result.current);
+        }
+      })
+      .catch(() => {});
+  }
 
-  // Skills freshness nudge — same gating as the CLI self-update notice.
+  // Skills freshness nudge: stderr only, so it also runs under --json, which agents pass.
   import("./utils/skillsUpdateCheck.js")
     .then((mod) => {
       _printSkillsUpdateNotice = mod.printSkillsUpdateNotice;
@@ -345,8 +347,8 @@ async function finalizeCli(result: CommandResult): Promise<void> {
   if (!hasJsonFlag) {
     _printUpdateNotice?.();
     _printStalePinNotice?.();
-    _printSkillsUpdateNotice?.();
   }
+  _printSkillsUpdateNotice?.();
   if (_appHistoryNotice) process.stderr.write(`◇  ${_appHistoryNotice}\n`);
   process.exitCode = exitCode;
 }
@@ -356,7 +358,10 @@ registerRootExitRequester((exitCode) => {
     exitCode,
     kind: exitCode === 0 ? "success" : "runtime_error",
     presented: true,
-  }).finally(() => process.exit(exitCode));
+  }).finally(async () => {
+    await outputWritten();
+    process.exit(exitCode);
+  });
 });
 
 registerRootExitCodeSanitizer(() => {

@@ -36,6 +36,7 @@ export interface RenderToLambdaOptions {
   projectDir?: string;
   /** Re-use an existing `deploySite` upload (skips tar+S3 PUT). */
   siteHandle?: SiteHandle;
+  onNotice?: (message: string) => void;
   /** Validated `SerializableDistributedRenderConfig` (no logger / abortSignal). */
   config: SerializableDistributedRenderConfig;
   /**
@@ -94,7 +95,7 @@ export async function renderToLambda(opts: RenderToLambdaOptions): Promise<Rende
   }
 
   const sfn = opts.sfn ?? new SFNClient({ region: opts.region });
-  await assertStackReadsSites(sfn, opts.stateMachineArn);
+  await assertStackReadsSites({ stateMachineArn: opts.stateMachineArn, sfn });
 
   const executionName = opts.executionName ?? `hf-render-${randomUUID()}`;
   const ext = formatExtension(opts.config.format);
@@ -115,6 +116,7 @@ export async function renderToLambda(opts: RenderToLambdaOptions): Promise<Rende
         projectDir: opts.projectDir as string,
         bucketName: opts.bucketName,
         region: opts.region,
+        onNotice: opts.onNotice,
         s3: opts.s3,
       });
 
@@ -160,7 +162,13 @@ export async function renderToLambda(opts: RenderToLambdaOptions): Promise<Rende
 }
 
 /** An older stack's plan step would try to untar a site manifest and fail after retries. */
-async function assertStackReadsSites(sfn: SFNClient, stateMachineArn: string): Promise<void> {
+export async function assertStackReadsSites(opts: {
+  stateMachineArn: string;
+  region?: string;
+  sfn?: SFNClient;
+}): Promise<void> {
+  const sfn = opts.sfn ?? new SFNClient({ region: opts.region });
+  const { stateMachineArn } = opts;
   const { definition } = await sfn.send(new DescribeStateMachineCommand({ stateMachineArn }));
   if (definition?.includes(`"${SITE_MANIFEST_INVALID}"`)) return;
   const error = new Error(
