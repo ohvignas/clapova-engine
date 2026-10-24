@@ -10,9 +10,7 @@ export interface ReviewSheetsOptions {
   /** Directory for the stills and sheets (default: the project's snapshot artifacts). */
   outputDir?: string;
   signal?: AbortSignal;
-  /** Default 180 000 ms. */
   timeoutMs?: number;
-  /** Test seam: replaces the CLI child process. */
   cli?: CliRunner;
 }
 
@@ -41,12 +39,7 @@ export interface ReviewSheetsResult {
   seams: ReviewSeamSheet[];
 }
 
-/**
- * Review sheets (`hyperframes snapshot --review`, upstream snapshotReview.ts): stills on each
- * scene's beats, five stills around every seam, and a phone-width sheet, laid out as JPEG
- * contact sheets an agent or a reviewer reads one by one. No network: `--describe` (model
- * captions) is never passed.
- */
+/** `hyperframes snapshot --review` contact sheets; never `--describe` (network). */
 export async function reviewSheets(options: ReviewSheetsOptions): Promise<ReviewSheetsResult> {
   if (!options.projectDir) {
     throw new ClapovaRenderError({
