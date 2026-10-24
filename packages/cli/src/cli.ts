@@ -178,7 +178,12 @@ const commandLoaders = {
   capture: () => import("./commands/capture.js").then((m) => m.default),
   lambda: () => import("./commands/lambda.js").then((m) => m.default),
   cloudrun: () => import("./commands/cloudrun.js").then((m) => m.default),
-  cloud: () => import("./commands/disabled.js").then((m) => m.disabledCommand("cloud")),
+  // Clapova fork: `cloud` stays disabled, except `cloud render --dry-run`, which only sizes
+  // the local archive and returns before any HeyGen client is created (no outbound network).
+  cloud: () =>
+    process.argv[3] === "render" && process.argv.includes("--dry-run")
+      ? import("./commands/cloud.js").then((m) => m.default)
+      : import("./commands/disabled.js").then((m) => m.disabledCommand("cloud")),
   auth: () => import("./commands/auth.js").then((m) => m.default),
   figma: () => import("./commands/figma.js").then((m) => m.default),
 };

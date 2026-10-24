@@ -13,8 +13,13 @@ describe("cli command table", () => {
   it("routes feedback, publish and cloud to the disabled command", async () => {
     const { readFileSync } = await import("node:fs");
     const src = readFileSync(new URL("../cli.ts", import.meta.url), "utf8");
-    for (const name of ["feedback", "publish", "cloud"]) {
+    for (const name of ["feedback", "publish"]) {
       expect(src).toContain(`${name}: () => import("./commands/disabled.js")`);
     }
+    // `cloud` is disabled except `cloud render --dry-run` (local archive sizing, no network).
+    expect(src).toContain(
+      `import("./commands/disabled.js").then((m) => m.disabledCommand("cloud"))`,
+    );
+    expect(src).toContain(`process.argv[3] === "render" && process.argv.includes("--dry-run")`);
   });
 });
