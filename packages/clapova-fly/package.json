@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Clapova distributed rendering on Fly Machines: segment split, R2/S3 storage, assembly, resume after failure.",
+  "bin": {
+    "clapova-fly-worker": "./src/bin.ts"
+  },
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

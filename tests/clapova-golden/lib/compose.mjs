@@ -7,7 +7,7 @@
 // fondu audio en `data-automation`, jamais de `crossorigin`.
 // Pur : mêmes entrées, même HTML. Ni horloge ni hasard.
 
-export const GSAP_SRC = "https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js";
+const GSAP_SRC = "https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js";
 
 const esc = (s) =>
   String(s)

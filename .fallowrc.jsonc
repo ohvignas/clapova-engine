@@ -71,6 +71,9 @@
     "packages/producer/src/services/__fixtures__/crashOnMessageWorker.mjs",
     "scripts/**/*.{ts,mjs,js}",
     "scripts/*/run.mjs",
+    // Clapova golden suite: run.mjs is launched by clapova-golden.yml, render.ts by run.mjs (child process).
+    "tests/clapova-golden/run.mjs",
+    "tests/clapova-golden/render.ts",
     // Keyframe UI components — wired dynamically via EaseCurveSection/MotionPanel.
     "packages/studio/src/components/editor/KeyframeDiamond.tsx",
     "packages/studio/src/components/editor/SpringEaseEditor.tsx",
@@ -429,6 +432,9 @@
     },
   ],
   "ignoreDependencies": [
+    // Clapova: loaded by dynamic import() from a string specifier (clapova-render engine.ts, clapova-fly store.ts).
+    "@hyperframes/lint",
+    "@aws-sdk/client-s3",
     // Runtime/dynamic deps not visible to static analysis: tsup `external`,
     // dynamic require() resolution, peer/static-file consumption in tests,
     // and bun-hoisted workspace devDeps (e.g. happy-dom in root package.json

@@ -35,7 +35,7 @@ const H264 = [
 const video = (source) => ["-f", "lavfi", "-i", `${source}:rate=30:duration=${SECONDS}`];
 
 /** nom de fichier -> arguments ffmpeg (sans "-y" ni chemin de sortie). */
-export const MEDIA = {
+const MEDIA = {
   "plan-a.mp4": [...video("testsrc2=size=1920x1080"), ...H264, "-an"],
   "plan-b.mp4": [...video("gradients=size=1920x1080:seed=3:speed=0.02"), ...H264, "-an"],
   "plan-v.mp4": [...video("testsrc2=size=1080x1920"), ...H264, "-an"],

@@ -27,7 +27,7 @@ export type CliRunner = (args: readonly string[], options: CliRunOptions) => Pro
 const CLI_MODULE = "@hyperframes/cli/package.json";
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
-export function resolveCliBin(): string {
+function resolveCliBin(): string {
   const fromEnv = process.env["CLAPOVA_HYPERFRAMES_BIN"];
   if (fromEnv) return fromEnv;
   const require = createRequire(import.meta.url);
