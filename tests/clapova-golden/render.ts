@@ -15,7 +15,12 @@ if (!outDir || ids.length === 0) {
 await mkdir(outDir, { recursive: true });
 for (const id of ids) {
   const job = createRenderJob({
-    fps: 30, quality: "high", format: "mp4", useGpu: false, debug: false, hdrMode: "force-sdr",
+    fps: 30,
+    quality: "high",
+    format: "mp4",
+    useGpu: false,
+    debug: false,
+    hdrMode: "force-sdr",
   });
   await executeRenderJob(job, join(here, ".build", id), join(outDir, `${id}.mp4`));
   console.log(`rendu ${id}`);

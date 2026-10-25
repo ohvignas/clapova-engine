@@ -7,19 +7,29 @@ It replaces `spawn(HF_BIN, ["render", ...])`, the stdout progress regex and `kil
 ## API
 
 ```ts
-import { renderTimeline, previewFrames, checkComposition, isClapovaRenderError } from "@clapova/render";
+import {
+  renderTimeline,
+  previewFrames,
+  checkComposition,
+  isClapovaRenderError,
+} from "@clapova/render";
 
-const check = await checkComposition({ projectDir, clipIds });   // lint (+ optional preflight)
-if (check.blocking) return reportToAgent(check.issues);           // <= 20 issues, errors first
+const check = await checkComposition({ projectDir, clipIds }); // lint (+ optional preflight)
+if (check.blocking) return reportToAgent(check.issues); // <= 20 issues, errors first
 
 const ac = new AbortController();
 const result = await renderTimeline({
-  projectDir, outputPath, fps: 30, quality: "standard", clipIds,
-  signal: ac.signal, timeoutMs: 20 * 60_000,
-  onProgress: ({ percent, stage, done, total }) => heartbeat(percent),  // monotonic 0..100
+  projectDir,
+  outputPath,
+  fps: 30,
+  quality: "standard",
+  clipIds,
+  signal: ac.signal,
+  timeoutMs: 20 * 60_000,
+  onProgress: ({ percent, stage, done, total }) => heartbeat(percent), // monotonic 0..100
 });
 
-const frames = await previewFrames({ projectDir, times: [0, 2.5, 7], outDir });  // <= 12 PNG, 540p
+const frames = await previewFrames({ projectDir, times: [0, 2.5, 7], outDir }); // <= 12 PNG, 540p
 ```
 
 ## Errors
@@ -28,17 +38,17 @@ Every failure is a `ClapovaRenderError` (`code`, `owner: "user" | "system"`, `re
 `stage`, `issues[]`). `JSON.stringify(err)` gives the payload to store in Convex.
 Each issue carries `clipId`, `elementId`, `src`, `expected`, `detected`, `hint` when known.
 
-| code | owner | retryable | source |
-|---|---|---|---|
-| `ASSET_MEDIA_TYPE_MISMATCH` | user | no | producer `AssetMediaTypeMismatchError`; `details` (feat/erreur-media-detaillee) gives clipId/src |
-| `NOT_MEDIA_PAYLOAD` | user | no | engine `NotMediaPayloadError` (fingerprints only) |
-| `RENDER_QUALITY_BLOCKED` | user | no | producer `RenderQualityError` (one issue per warning code) |
-| `RENDER_CANCELLED` | system | no | caller abort |
-| `RENDER_TIMEOUT` | system | yes | `timeoutMs` exceeded |
-| `INVALID_INPUT` | user | no | bad options, rejected before the engine starts |
-| `PREVIEW_EXTRACT_FAILED` | system | yes | ffmpeg frame extraction |
-| any typed engine code | as thrown | as thrown | errors carrying `code` + `owner` + `retryable` |
-| `RENDER_FAILED` | system | yes | anything else |
+| code                        | owner     | retryable | source                                                                                           |
+| --------------------------- | --------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `ASSET_MEDIA_TYPE_MISMATCH` | user      | no        | producer `AssetMediaTypeMismatchError`; `details` (feat/erreur-media-detaillee) gives clipId/src |
+| `NOT_MEDIA_PAYLOAD`         | user      | no        | engine `NotMediaPayloadError` (fingerprints only)                                                |
+| `RENDER_QUALITY_BLOCKED`    | user      | no        | producer `RenderQualityError` (one issue per warning code)                                       |
+| `RENDER_CANCELLED`          | system    | no        | caller abort                                                                                     |
+| `RENDER_TIMEOUT`            | system    | yes       | `timeoutMs` exceeded                                                                             |
+| `INVALID_INPUT`             | user      | no        | bad options, rejected before the engine starts                                                   |
+| `PREVIEW_EXTRACT_FAILED`    | system    | yes       | ffmpeg frame extraction                                                                          |
+| any typed engine code       | as thrown | as thrown | errors carrying `code` + `owner` + `retryable`                                                   |
+| `RENDER_FAILED`             | system    | yes       | anything else                                                                                    |
 
 Engine errors are recognized by shape (`code` / `name`), not class identity.
 `clipIds` maps element ids written by Clapova's composer (`c-<clipId>`, `-l`, `-k`, `-km`)
@@ -68,3 +78,9 @@ back to timeline clip ids; without it a naming heuristic is used.
 
 `bun run build` (tsup to `dist/`), `bun run test` (vitest), `bun run typecheck`.
 `src/engine.contract.test.ts` fails if a producer/lint export this SDK relies on disappears upstream.
+
+## Contrôle complet et planches de revue
+
+- `checkComposition({ projectDir })` lance `hyperframes check --json` (lint, runtime, layout, motion, contraste, craft audit : `first_frame_empty`, `text_below_floor`, `line_unread`, `dead_stretch`, `film_silent`). `result.sections` donne les comptes par section. `mode: "lint"` garde le contrôle statique sans navigateur.
+- `reviewSheets({ projectDir, composition?, outputDir? })` lance `hyperframes snapshot --review --json` et renvoie les planches JPEG (beats, coutures, téléphone) et les images.
+- Test bout en bout (Chrome requis) : `CLAPOVA_E2E=1 bunx vitest run src/cli.e2e.test.ts`.

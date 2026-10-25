@@ -7,16 +7,16 @@ Dix compositions de référence, rendues par le producer du fork puis comparées
 - loudness intégré (ebur128) à +/- 0,5 LU ;
 - durée à +/- 1 frame, présence ou absence du flux audio identiques.
 
-| Id | Format | Couvre |
-|---|---|---|
-| g01 / g02 | 16:9 / 9:16 | titre animé sur image, sans son |
-| g03 / g04 | 16:9 / 9:16 | voix + musique avec ducking et fondus |
-| g05 | 16:9 | transition fondu |
-| g06 | 9:16 | transition glissée |
-| g07 | 16:9 | vidéo sans son + titre animé |
-| g08 | 9:16 | vidéo sans son + musique |
-| g09 | 16:9 | vidéo avec son natif |
-| g10 | 16:9 | multi-pistes : image, deux plans, transition, titre, voix, musique |
+| Id        | Format      | Couvre                                                             |
+| --------- | ----------- | ------------------------------------------------------------------ |
+| g01 / g02 | 16:9 / 9:16 | titre animé sur image, sans son                                    |
+| g03 / g04 | 16:9 / 9:16 | voix + musique avec ducking et fondus                              |
+| g05       | 16:9        | transition fondu                                                   |
+| g06       | 9:16        | transition glissée                                                 |
+| g07       | 16:9        | vidéo sans son + titre animé                                       |
+| g08       | 9:16        | vidéo sans son + musique                                           |
+| g09       | 16:9        | vidéo avec son natif                                               |
+| g10       | 16:9        | multi-pistes : image, deux plans, transition, titre, voix, musique |
 
 ## Comment les compositions sont produites
 

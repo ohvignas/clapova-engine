@@ -3,7 +3,12 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ProducerApi } from "./engine.js";
-import { ClapovaRenderError, INVALID_INPUT, PREVIEW_EXTRACT_FAILED, RENDER_CANCELLED } from "./errors.js";
+import {
+  ClapovaRenderError,
+  INVALID_INPUT,
+  PREVIEW_EXTRACT_FAILED,
+  RENDER_CANCELLED,
+} from "./errors.js";
 import { anySignal, isAbortError, type RenderProgress, renderTimeline } from "./render.js";
 
 export const MAX_PREVIEW_FRAMES = 12;
@@ -99,7 +104,9 @@ export async function previewFrames(options: PreviewFramesOptions): Promise<Prev
         ? Math.max(0, result.durationSeconds - 1 / fps)
         : Number.POSITIVE_INFINITY;
     const remainingMs =
-      options.timeoutMs !== undefined ? Math.max(1, options.timeoutMs - (Date.now() - startedAt)) : undefined;
+      options.timeoutMs !== undefined
+        ? Math.max(1, options.timeoutMs - (Date.now() - startedAt))
+        : undefined;
     const timeoutSignal = remainingMs !== undefined ? AbortSignal.timeout(remainingMs) : undefined;
     const extractSignal = anySignal([options.signal, timeoutSignal]);
     const frames: PreviewFrame[] = [];
@@ -116,7 +123,10 @@ export async function previewFrames(options: PreviewFramesOptions): Promise<Prev
           signal: extractSignal,
         });
       } catch (error) {
-        if (extractSignal?.aborted && (isAbortError(error) || error instanceof ClapovaRenderError)) {
+        if (
+          extractSignal?.aborted &&
+          (isAbortError(error) || error instanceof ClapovaRenderError)
+        ) {
           throw abortedError(options.signal, timeoutSignal, error);
         }
         throw error;
@@ -130,7 +140,11 @@ export async function previewFrames(options: PreviewFramesOptions): Promise<Prev
 }
 
 /** Cancellation during extraction: never retryable when the caller cancelled. */
-function abortedError(callerSignal?: AbortSignal, timeoutSignal?: AbortSignal, cause?: unknown): ClapovaRenderError {
+function abortedError(
+  callerSignal?: AbortSignal,
+  timeoutSignal?: AbortSignal,
+  cause?: unknown,
+): ClapovaRenderError {
   if (timeoutSignal?.aborted && !callerSignal?.aborted) {
     return new ClapovaRenderError({
       code: "RENDER_TIMEOUT",
@@ -169,7 +183,10 @@ export function createFfmpegExtractor(ffmpegPath?: string): FrameExtractor {
         `scale=-2:'min(${request.maxHeight},ih)'`,
         request.outputPath,
       ];
-      const child = spawn(bin, args, { stdio: ["ignore", "ignore", "pipe"], signal: request.signal });
+      const child = spawn(bin, args, {
+        stdio: ["ignore", "ignore", "pipe"],
+        signal: request.signal,
+      });
       let stderr = "";
       child.stderr?.on("data", (chunk: Buffer) => {
         stderr = (stderr + chunk.toString()).slice(-2_000);
@@ -186,13 +203,13 @@ export function createFfmpegExtractor(ffmpegPath?: string): FrameExtractor {
                 cause: error,
               })
             : new ClapovaRenderError({
-            code: PREVIEW_EXTRACT_FAILED,
-            owner: "system",
-            retryable: true,
-            message: `ffmpeg could not start: ${error.message}`,
-            stage: "preview_extract",
-            cause: error,
-          }),
+                code: PREVIEW_EXTRACT_FAILED,
+                owner: "system",
+                retryable: true,
+                message: `ffmpeg could not start: ${error.message}`,
+                stage: "preview_extract",
+                cause: error,
+              }),
         ),
       );
       child.on("close", (code) => {

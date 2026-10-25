@@ -19,7 +19,9 @@ describe("previewFrames", () => {
       times: [0, 1, 5],
       outDir,
       producer: api,
-      extractFrame: async (r) => { requests.push(r); },
+      extractFrame: async (r) => {
+        requests.push(r);
+      },
     });
     expect(calls).toHaveLength(1);
     expect(calls[0]?.config).toMatchObject({ quality: "draft", format: "mp4" });
@@ -32,10 +34,21 @@ describe("previewFrames", () => {
 
   it("rejects empty, oversized or negative time lists", async () => {
     const { api } = fakeProducer();
-    const opts = { projectDir: "/p", outDir: tmpdir(), producer: api, extractFrame: async () => {} };
-    await expect(previewFrames({ ...opts, times: [] })).rejects.toMatchObject({ code: "INVALID_INPUT" });
-    await expect(previewFrames({ ...opts, times: Array(13).fill(0) })).rejects.toMatchObject({ code: "INVALID_INPUT" });
-    await expect(previewFrames({ ...opts, times: [-1] })).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    const opts = {
+      projectDir: "/p",
+      outDir: tmpdir(),
+      producer: api,
+      extractFrame: async () => {},
+    };
+    await expect(previewFrames({ ...opts, times: [] })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    await expect(previewFrames({ ...opts, times: Array(13).fill(0) })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    await expect(previewFrames({ ...opts, times: [-1] })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
   });
 });
 
@@ -71,7 +84,14 @@ describe("previewFrames cancellation during extraction", () => {
     dirs.push(outDir);
     const { api } = fakeProducer();
     await expect(
-      previewFrames({ projectDir: "/p", times: [0], outDir, producer: api, timeoutMs: 50, extractFrame: abortable }),
+      previewFrames({
+        projectDir: "/p",
+        times: [0],
+        outDir,
+        producer: api,
+        timeoutMs: 50,
+        extractFrame: abortable,
+      }),
     ).rejects.toMatchObject({ code: "RENDER_TIMEOUT", retryable: true });
   });
 

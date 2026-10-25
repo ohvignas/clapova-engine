@@ -49,7 +49,11 @@ describe("sizeSegments", () => {
 
 describe("assignChunksToMachines", () => {
   it("balances contiguous groups", () => {
-    expect(assignChunksToMachines(8, 3)).toEqual([[0, 1, 2], [3, 4, 5], [6, 7]]);
+    expect(assignChunksToMachines(8, 3)).toEqual([
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7],
+    ]);
   });
   it("never creates empty groups when machines exceed chunks", () => {
     expect(assignChunksToMachines(2, 5)).toEqual([[0], [1]]);

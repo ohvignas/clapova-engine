@@ -39,7 +39,17 @@ export function parseSsim(stderr) {
 /** SSIM global entre deux images de même taille. */
 export async function ssim(a, b) {
   const r = await run("ffmpeg", [
-    "-hide_banner", "-nostats", "-i", a, "-i", b, "-lavfi", "ssim", "-f", "null", "-",
+    "-hide_banner",
+    "-nostats",
+    "-i",
+    a,
+    "-i",
+    b,
+    "-lavfi",
+    "ssim",
+    "-f",
+    "null",
+    "-",
   ]);
   if (r.code !== 0) throw new Error(`SSIM ${a} ${b}\n${r.stderr.slice(-500)}`);
   return parseSsim(r.stderr);
@@ -56,8 +66,13 @@ export function parseIntegratedLufs(stderr) {
 
 export async function probe(file) {
   const r = await run("ffprobe", [
-    "-v", "error", "-show_entries", "stream=codec_type,width,height,r_frame_rate:format=duration",
-    "-of", "json", file,
+    "-v",
+    "error",
+    "-show_entries",
+    "stream=codec_type,width,height,r_frame_rate:format=duration",
+    "-of",
+    "json",
+    file,
   ]);
   if (r.code !== 0) throw new Error(`ffprobe ${file}\n${r.stderr}`);
   const j = JSON.parse(r.stdout);
@@ -76,8 +91,16 @@ export async function loudness(file) {
   const info = await probe(file);
   if (!info.hasAudio) return { hasAudio: false, lufs: null };
   const r = await run("ffmpeg", [
-    "-hide_banner", "-nostats", "-i", file, "-vn",
-    "-af", "ebur128=framelog=quiet", "-f", "null", "-",
+    "-hide_banner",
+    "-nostats",
+    "-i",
+    file,
+    "-vn",
+    "-af",
+    "ebur128=framelog=quiet",
+    "-f",
+    "null",
+    "-",
   ]);
   if (r.code !== 0) throw new Error(`ebur128 ${file}\n${r.stderr.slice(-500)}`);
   return { hasAudio: true, lufs: parseIntegratedLufs(r.stderr) };

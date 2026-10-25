@@ -16,9 +16,7 @@
     "resolveConfig",
     "runHyperframeLint"
   ],
-  "knownCompositionContractVersions": [
-    1
-  ],
+  "knownCompositionContractVersions": [1],
   "lintCodes": [
     "audio_carve_ungrouped_sources",
     "audio_file_without_element",

@@ -1,8 +1,8 @@
 {
   "name": "@clapova/render",
   "version": "0.1.0",
-  "description": "Clapova render SDK: renderTimeline, previewFrames and checkComposition on top of @hyperframes/producer, with structured errors.",
   "private": true,
+  "description": "Clapova render SDK: renderTimeline, previewFrames and checkComposition on top of @hyperframes/producer, with structured errors.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -23,15 +23,13 @@
     },
     "./package.json": "./package.json"
   },
-  "engines": {
-    "node": ">=20.3"
-  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hyperframes/cli": "workspace:*",
     "@hyperframes/lint": "workspace:*",
     "@hyperframes/producer": "workspace:*"
   },
@@ -40,5 +38,8 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20.3"
   }
 }

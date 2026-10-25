@@ -11,5 +11,5 @@ export default defineConfig({
   clean: true,
   dts: true,
   // The engine is loaded at runtime (lazy import), never bundled.
-  external: ["@hyperframes/producer", "@hyperframes/lint"],
+  external: ["@hyperframes/producer", "@hyperframes/lint", "@hyperframes/cli"],
 });

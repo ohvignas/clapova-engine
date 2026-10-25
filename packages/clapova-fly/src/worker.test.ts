@@ -60,7 +60,10 @@ describe("runChunkJob", () => {
 
   it("re-renders when the marker size mismatches or is corrupt", async () => {
     await runChunkJob(job, deps([]));
-    await store.putText(keys.chunkDone("h", 0), JSON.stringify({ index: 0, sha256: "s", size: 999, framesEncoded: 1 }));
+    await store.putText(
+      keys.chunkDone("h", 0),
+      JSON.stringify({ index: 0, sha256: "s", size: 999, framesEncoded: 1 }),
+    );
     await store.putText(keys.chunkDone("h", 1), "{not json");
     const rendered: number[] = [];
     await runChunkJob(job, deps(rendered));

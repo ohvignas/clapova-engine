@@ -10,9 +10,7 @@
 export type EngineQuality = "draft" | "standard" | "high";
 export type EngineFormat = "mp4" | "webm" | "mov" | "gif" | "png-sequence";
 
-export interface EngineRenderConfigInput {
-  fps: number | { num: number; den: number };
-  quality: EngineQuality;
+export interface EngineRenderSettings {
   format?: EngineFormat;
   workers?: number;
   useGpu?: boolean;
@@ -23,6 +21,11 @@ export interface EngineRenderConfigInput {
   hdrMode?: "auto" | "force-hdr" | "force-sdr";
   variables?: Record<string, unknown>;
   resumeSegments?: boolean;
+}
+
+export interface EngineRenderConfigInput extends EngineRenderSettings {
+  fps: number | { num: number; den: number };
+  quality: EngineQuality;
   logger?: unknown;
 }
 
@@ -92,9 +95,7 @@ let lintPromise: Promise<LintApi> | null = null;
 
 /** Lazy-load the real producer. Kept dynamic so importing the SDK never boots Chrome tooling. */
 export function loadProducer(): Promise<ProducerApi> {
-  producerPromise ??= import(PRODUCER_MODULE).then(
-    (mod) => mod as unknown as ProducerApi,
-  );
+  producerPromise ??= import(PRODUCER_MODULE).then((mod) => mod as unknown as ProducerApi);
   return producerPromise;
 }
 

@@ -120,6 +120,8 @@ COPY packages/sdk/package.json packages/sdk/package.json
 COPY packages/sdk-playground/package.json packages/sdk-playground/package.json
 COPY packages/inspector/package.json packages/inspector/package.json
 COPY packages/studio-server/package.json packages/studio-server/package.json
+COPY packages/clapova-render/package.json packages/clapova-render/package.json
+COPY packages/clapova-fly/package.json packages/clapova-fly/package.json
 COPY scripts/package-subpaths.mjs scripts/package-subpaths.mjs
 # A corrupt tarball extraction can print an error and then hang instead of
 # exiting (seen in Dockerfile.test, run 35468046055). Bound each attempt and

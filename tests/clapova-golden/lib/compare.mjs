@@ -11,16 +11,22 @@ import { LUFS_TOLERANCE, SSIM_MIN } from "./metrics.mjs";
 export function compareResult(ref, got, frames) {
   const fails = [];
   for (const f of frames) {
-    if (!(f.ssim >= SSIM_MIN)) fails.push(`frame ${f.t}s : SSIM ${f.ssim.toFixed(4)} < ${SSIM_MIN}`);
+    if (!(f.ssim >= SSIM_MIN))
+      fails.push(`frame ${f.t}s : SSIM ${f.ssim.toFixed(4)} < ${SSIM_MIN}`);
   }
   if (ref.hasAudio !== got.hasAudio) {
-    fails.push(`flux audio : attendu ${ref.hasAudio ? "présent" : "absent"}, obtenu ${got.hasAudio ? "présent" : "absent"}`);
+    fails.push(
+      `flux audio : attendu ${ref.hasAudio ? "présent" : "absent"}, obtenu ${got.hasAudio ? "présent" : "absent"}`,
+    );
   } else if (ref.hasAudio) {
     if (ref.lufs == null || got.lufs == null) {
       if (ref.lufs !== got.lufs) fails.push(`loudness : attendu ${ref.lufs}, obtenu ${got.lufs}`);
     } else {
       const d = Math.abs(got.lufs - ref.lufs);
-      if (d > LUFS_TOLERANCE) fails.push(`loudness : ${got.lufs} LUFS pour ${ref.lufs} attendu (écart ${d.toFixed(2)} LU > ${LUFS_TOLERANCE})`);
+      if (d > LUFS_TOLERANCE)
+        fails.push(
+          `loudness : ${got.lufs} LUFS pour ${ref.lufs} attendu (écart ${d.toFixed(2)} LU > ${LUFS_TOLERANCE})`,
+        );
     }
   }
   const frameS = 1 / ref.fps;

@@ -1,13 +1,18 @@
 import { createClipIdResolver } from "./clipIds.js";
 import {
-  type EngineFormat,
   type EngineQuality,
   type EngineRenderConfigInput,
+  type EngineRenderSettings,
   type EngineRenderJob,
   type ProducerApi,
   loadProducer,
 } from "./engine.js";
-import { ClapovaRenderError, INVALID_INPUT, normalizeEngineError, RENDER_FAILED } from "./errors.js";
+import {
+  ClapovaRenderError,
+  INVALID_INPUT,
+  normalizeEngineError,
+  RENDER_FAILED,
+} from "./errors.js";
 
 export interface RenderProgress {
   /** 0..100, never decreases within one render. */
@@ -19,22 +24,12 @@ export interface RenderProgress {
   message: string;
 }
 
-export interface RenderTimelineOptions {
+export interface RenderTimelineOptions extends EngineRenderSettings {
   /** Directory holding the composed index.html and its assets. */
   projectDir: string;
   outputPath: string;
   fps?: number;
   quality?: EngineQuality;
-  format?: EngineFormat;
-  workers?: number;
-  useGpu?: boolean;
-  strictness?: "strict" | "best-effort";
-  entryFile?: string;
-  crf?: number;
-  videoBitrate?: string;
-  hdrMode?: "auto" | "force-hdr" | "force-sdr";
-  variables?: Record<string, unknown>;
-  resumeSegments?: boolean;
   /** Cancels the render; the engine stops its browsers and encoders. */
   signal?: AbortSignal;
   /** Hard wall-clock limit, enforced through the same abort path. */
@@ -132,12 +127,17 @@ export function createMonotonicProgress(
   };
 }
 
-export async function renderTimeline(options: RenderTimelineOptions): Promise<RenderTimelineResult> {
+export async function renderTimeline(
+  options: RenderTimelineOptions,
+): Promise<RenderTimelineResult> {
   validate(options);
   const resolveClipId = createClipIdResolver(options.clipIds);
   const signal = engineSignal(options.signal, options.timeoutMs);
   if (signal?.aborted) {
-    throw normalizeEngineError({ name: "RenderCancelledError", reason: "aborted" }, { stage: "input" });
+    throw normalizeEngineError(
+      { name: "RenderCancelledError", reason: "aborted" },
+      { stage: "input" },
+    );
   }
 
   const producer = options.producer ?? (await loadProducer());

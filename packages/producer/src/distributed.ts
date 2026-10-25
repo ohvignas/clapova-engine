@@ -38,6 +38,8 @@ export {
   plan,
   rejectUnsupportedDistributedFormat,
   resolveChunkPlan,
+  buildPlanAudio,
+  plansSeparateAudio,
   // Types
   type DistributedRenderConfig,
   type PlanResult,
@@ -98,10 +100,13 @@ export {
   readWebGlVendorInfoFromCanvas,
   renderChunk,
   // Types
+  type ChunkFrameRange,
   type ChunkRenderer,
   type ChunkResult,
   type EffectiveChunkResult,
+  type RenderChunkOptions,
   // Error codes + classes
+  CHUNK_FRAME_RANGE_INVALID,
   FFMPEG_VERSION_MISMATCH,
   INVALID_VIDEO_METADATA,
   PLAN_HASH_MISMATCH,
@@ -112,6 +117,8 @@ export {
 export {
   assemble,
   chunksAreStitchedMp4,
+  stitchesSeparateAudio,
+  type AssembleChunkPaths,
   type AssembleResult,
 } from "./services/distributed/assemble.js";
 export { muxChunkWithAudio } from "./services/distributed/chunkAudio.js";
@@ -133,6 +140,17 @@ export {
   validateVariablesPayload,
 } from "./services/distributed/renderConfigValidation.js";
 export { hashProjectDir, listSiteFiles } from "./services/distributed/projectHash.js";
+export {
+  AUDIO_SIDECAR_MIN_BYTES,
+  buildAudioSidecar,
+  wantsAudioSidecar,
+  type AudioSidecarOutcome,
+} from "./services/distributed/audioSidecar.js";
+export {
+  buildProbeFacts,
+  wantsProbeFacts,
+  type ProbeFactsOutcome,
+} from "./services/distributed/probeFacts.js";
 
 // ── Plan protocol compatibility ────────────────────────────────────────────
 // Workers validate this descriptor before consuming layout-specific

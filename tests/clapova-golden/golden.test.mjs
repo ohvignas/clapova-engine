@@ -10,7 +10,15 @@ import { build, BUILD_DIR } from "./build.mjs";
 import { compareResult } from "./lib/compare.mjs";
 import { composeHtml, volumeLane } from "./lib/compose.mjs";
 import { COMPOSITIONS } from "./lib/compositions.mjs";
-import { extractFrame, loudness, parseIntegratedLufs, parseSsim, probe, run, ssim } from "./lib/metrics.mjs";
+import {
+  extractFrame,
+  loudness,
+  parseIntegratedLufs,
+  parseSsim,
+  probe,
+  run,
+  ssim,
+} from "./lib/metrics.mjs";
 
 const tmp = await mkdtemp(join(tmpdir(), "golden-test-"));
 after(() => rm(tmp, { recursive: true, force: true }));
@@ -23,10 +31,21 @@ describe("compositions de référence", () => {
 
   it("couvre 16:9, 9:16, voix+musique, transitions, titres animés, vidéo sans son", () => {
     const tags = new Set(COMPOSITIONS.flatMap((c) => c.tags));
-    for (const t of ["16:9", "9:16", "voix", "musique", "transition", "titre-anime", "video-muette"]) {
+    for (const t of [
+      "16:9",
+      "9:16",
+      "voix",
+      "musique",
+      "transition",
+      "titre-anime",
+      "video-muette",
+    ]) {
       assert.ok(tags.has(t), `tag manquant : ${t}`);
     }
-    assert.ok(COMPOSITIONS.some((c) => !c.audio), "au moins une composition sans son");
+    assert.ok(
+      COMPOSITIONS.some((c) => !c.audio),
+      "au moins une composition sans son",
+    );
   });
 
   for (const spec of COMPOSITIONS) {
@@ -37,11 +56,16 @@ describe("compositions de référence", () => {
       assert.match(html, new RegExp(`data-width="${spec.width}" data-height="${spec.height}"`));
       assert.match(html, /window\.__timelines\["/);
       assert.doesNotMatch(html, /crossorigin|\.play\(\)|Math\.random|Date\.now/);
-      for (const m of html.matchAll(/<audio\b[^>]*>/g)) assert.match(m[0], /\bid="/, "audio sans id");
+      for (const m of html.matchAll(/<audio\b[^>]*>/g))
+        assert.match(m[0], /\bid="/, "audio sans id");
       for (const m of html.matchAll(/<video\b[^>]*>/g)) {
-        assert.ok(/\bmuted\b/.test(m[0]) || /data-has-audio="true"/.test(m[0]), "vidéo ni muted ni data-has-audio");
+        assert.ok(
+          /\bmuted\b/.test(m[0]) || /data-has-audio="true"/.test(m[0]),
+          "vidéo ni muted ni data-has-audio",
+        );
       }
-      for (const f of spec.frames) assert.ok(f >= 0 && f < Math.max(...spec.clips.map((c) => c.start + c.duration)));
+      for (const f of spec.frames)
+        assert.ok(f >= 0 && f < Math.max(...spec.clips.map((c) => c.start + c.duration)));
     });
   }
 
@@ -55,7 +79,12 @@ describe("compositions de référence", () => {
 
 describe("volumeLane", () => {
   it("baisse la musique pendant la parole puis la rend", () => {
-    const pts = volumeLane({ duration: 6, volume: 1, speech: [[1, 3]], duck: { level: 0.25, attack: 0.08, release: 0.3 } });
+    const pts = volumeLane({
+      duration: 6,
+      volume: 1,
+      speech: [[1, 3]],
+      duck: { level: 0.25, attack: 0.08, release: 0.3 },
+    });
     const at = (t) => pts.filter((p) => p.t <= t).at(-1).v;
     assert.equal(at(0.5), 1);
     assert.equal(at(2), 0.25);
@@ -86,8 +115,18 @@ describe("règles de comparaison", () => {
 
 describe("analyse de la sortie ffmpeg", () => {
   it("lit SSIM et LUFS", () => {
-    assert.equal(parseSsim("[Parsed_ssim_0 @ 0x1] SSIM R:0.99 (20.0) G:0.99 (20.0) B:0.99 (20.0) All:0.987654 (19.1)"), 0.987654);
-    assert.equal(parseIntegratedLufs("noise\n  Integrated loudness:\n    I:         -23.4 LUFS\n    Threshold: -33.4 LUFS"), -23.4);
+    assert.equal(
+      parseSsim(
+        "[Parsed_ssim_0 @ 0x1] SSIM R:0.99 (20.0) G:0.99 (20.0) B:0.99 (20.0) All:0.987654 (19.1)",
+      ),
+      0.987654,
+    );
+    assert.equal(
+      parseIntegratedLufs(
+        "noise\n  Integrated loudness:\n    I:         -23.4 LUFS\n    Threshold: -33.4 LUFS",
+      ),
+      -23.4,
+    );
     assert.equal(parseIntegratedLufs("Integrated loudness:\n    I:         -inf LUFS"), null);
   });
 });
@@ -95,7 +134,17 @@ describe("analyse de la sortie ffmpeg", () => {
 describe("mesures ffmpeg", () => {
   const sine = async (name, amp) => {
     const out = join(tmp, name);
-    const r = await run("ffmpeg", ["-hide_banner", "-y", "-f", "lavfi", "-i", `sine=frequency=1000:sample_rate=48000:duration=4`, "-af", `volume=${amp}`, out]);
+    const r = await run("ffmpeg", [
+      "-hide_banner",
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      `sine=frequency=1000:sample_rate=48000:duration=4`,
+      "-af",
+      `volume=${amp}`,
+      out,
+    ]);
     assert.equal(r.code, 0, r.stderr);
     return out;
   };
@@ -109,14 +158,34 @@ describe("mesures ffmpeg", () => {
 
   it("loudness : sans flux audio", async () => {
     const v = join(tmp, "muet.mp4");
-    await run("ffmpeg", ["-hide_banner", "-y", "-f", "lavfi", "-i", "color=c=red:s=64x64:d=1:r=30", "-pix_fmt", "yuv420p", v]);
+    await run("ffmpeg", [
+      "-hide_banner",
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=red:s=64x64:d=1:r=30",
+      "-pix_fmt",
+      "yuv420p",
+      v,
+    ]);
     assert.deepEqual(await loudness(v), { hasAudio: false, lufs: null });
   });
 
   it("SSIM : 1 pour deux images identiques, < 0,99 pour deux images différentes", async () => {
     const mk = async (name, src) => {
       const out = join(tmp, name);
-      const r = await run("ffmpeg", ["-hide_banner", "-y", "-f", "lavfi", "-i", src, "-frames:v", "1", out]);
+      const r = await run("ffmpeg", [
+        "-hide_banner",
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        src,
+        "-frames:v",
+        "1",
+        out,
+      ]);
       assert.equal(r.code, 0, r.stderr);
       return out;
     };
@@ -139,7 +208,10 @@ describe("build des compositions", { timeout: 300000 }, () => {
         const p = await probe(join(BUILD_DIR, spec.id, c.src));
         if (c.kind === "video") assert.equal(p.hasAudio, Boolean(c.sound), `${spec.id}/${c.src}`);
         if (c.kind === "video" || c.kind === "image") {
-          assert.ok(p.width >= p.height === spec.width >= spec.height, `orientation ${spec.id}/${c.src}`);
+          assert.ok(
+            p.width >= p.height === spec.width >= spec.height,
+            `orientation ${spec.id}/${c.src}`,
+          );
         }
       }
     }
@@ -147,6 +219,10 @@ describe("build des compositions", { timeout: 300000 }, () => {
     const first = await readFile(join(BUILD_DIR, COMPOSITIONS[2].id, "assets/voix.wav"));
     await build([COMPOSITIONS[2].id]);
     assert.deepEqual(first, await readFile(join(BUILD_DIR, COMPOSITIONS[2].id, "assets/voix.wav")));
-    await extractFrame(join(BUILD_DIR, COMPOSITIONS[2].id, "assets/plan-a.mp4"), 1, join(tmp, "f.png"));
+    await extractFrame(
+      join(BUILD_DIR, COMPOSITIONS[2].id, "assets/plan-a.mp4"),
+      1,
+      join(tmp, "f.png"),
+    );
   });
 });

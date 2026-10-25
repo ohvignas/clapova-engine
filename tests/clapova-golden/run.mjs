@@ -40,7 +40,11 @@ if (!renders) {
   renders = join(work, "renders");
   const root = resolve(here, "../..");
   const r = await new Promise((done) => {
-    const p = spawn("bunx", ["tsx", "tests/clapova-golden/render.ts", renders, ...specs.map((s) => s.id)], { cwd: root, stdio: "inherit" });
+    const p = spawn(
+      "bunx",
+      ["tsx", "tests/clapova-golden/render.ts", renders, ...specs.map((s) => s.id)],
+      { cwd: root, stdio: "inherit" },
+    );
     p.on("close", done);
   });
   if (r !== 0) {
@@ -61,13 +65,29 @@ for (const spec of specs) {
     await rm(refDir, { recursive: true, force: true });
     await mkdir(refDir, { recursive: true });
     for (const t of spec.frames) await extractFrame(video, t, join(refDir, frameName(t)));
-    await writeFile(join(refDir, "meta.json"), JSON.stringify({ id: spec.id, fps: spec.fps, width: info.width, height: info.height, frames: spec.frames, ...got }, null, 2) + "\n");
+    await writeFile(
+      join(refDir, "meta.json"),
+      JSON.stringify(
+        {
+          id: spec.id,
+          fps: spec.fps,
+          width: info.width,
+          height: info.height,
+          frames: spec.frames,
+          ...got,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
     console.log(`référence écrite : ${spec.id}`);
     continue;
   }
 
   if (!existsSync(join(refDir, "meta.json"))) {
-    console.error(`ECHEC ${spec.id} : référence absente (lancer avec --update dans l'image de test)`);
+    console.error(
+      `ECHEC ${spec.id} : référence absente (lancer avec --update dans l'image de test)`,
+    );
     failed++;
     continue;
   }
@@ -86,9 +106,12 @@ for (const spec of specs) {
     const keep = join(here, "failures", spec.id);
     await mkdir(keep, { recursive: true });
     await cp(video, join(keep, "output.mp4"));
-    for (const f of frames) await cp(join(work, `${spec.id}-${frameName(f.t)}`), join(keep, frameName(f.t)));
+    for (const f of frames)
+      await cp(join(work, `${spec.id}-${frameName(f.t)}`), join(keep, frameName(f.t)));
   } else {
-    console.log(`ok ${spec.id} (SSIM min ${min.toFixed(4)}, ${got.hasAudio ? `${got.lufs} LUFS` : "sans audio"})`);
+    console.log(
+      `ok ${spec.id} (SSIM min ${min.toFixed(4)}, ${got.hasAudio ? `${got.lufs} LUFS` : "sans audio"})`,
+    );
   }
 }
 await rm(work, { recursive: true, force: true });
