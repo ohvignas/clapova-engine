@@ -10,7 +10,6 @@
 export type EngineQuality = "draft" | "standard" | "high";
 export type EngineFormat = "mp4" | "webm" | "mov" | "gif" | "png-sequence";
 
-/** Render settings shared by the engine config and `renderTimeline` options. */
 export interface EngineRenderSettings {
   format?: EngineFormat;
   workers?: number;
