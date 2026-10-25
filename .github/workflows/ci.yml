@@ -152,6 +152,7 @@ jobs:
               - "registry/**"
               - "packages/**"
               - "scripts/**"
+              - "tests/clapova-golden/**"
               - "package.json"
               - "bun.lock"
               - "tsconfig*.json"
@@ -599,6 +600,7 @@ jobs:
         env:
           HYPERFRAMES_BROWSER_PATH: ${{ steps.catalog-chrome.outputs.chrome-path }}
       - run: bun run --filter '@hyperframes/{lint,parsers,studio-server,sdk,player,aws-lambda,gcp-cloud-run,sdk-playground,shader-transitions,inspector}' test
+      - run: bun run --filter '@clapova/{render,fly}' test
 
   test:
     name: Test
